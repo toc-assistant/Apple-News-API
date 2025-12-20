@@ -23,7 +23,7 @@ use Psr\Http\Message\RequestInterface;
  * It uses PSR-18 for HTTP requests and PSR-17 for message factories to ensure
  * compatibility with any modern PHP HTTP library.
  *
- * @see https://developer.apple.com/documentation/applenews/apple_news_api
+ * @see https://developer.apple.com/documentation/applenewsapi
  */
 final class AppleNewsClient
 {
@@ -83,7 +83,7 @@ final class AppleNewsClient
      * @param string $channelId The unique identifier for the channel.
      * @return array<string, mixed> The decoded API response.
      * @throws AppleNewsException If the API returns an error.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/get_channel_information
+     * @see https://developer.apple.com/documentation/applenewsapi/get-channels-_channelid_
      */
     public function getChannel(string $channelId): array
     {
@@ -112,7 +112,7 @@ final class AppleNewsClient
      * @param string $channelId The unique identifier for the channel.
      * @return array<string, mixed> The decoded API response containing section list.
      * @throws AppleNewsException If the API returns an error.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/list_sections
+     * @see https://developer.apple.com/documentation/applenewsapi/get-channels-_channelid_-sections
      */
     public function listSections(string $channelId): array
     {
@@ -125,7 +125,7 @@ final class AppleNewsClient
      * @param string $sectionId The unique identifier for the section.
      * @return array<string, mixed> The decoded API response.
      * @throws AppleNewsException If the API returns an error.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/get_section_information
+     * @see https://developer.apple.com/documentation/applenewsapi/get-sections-_sectionid_
      */
     public function getSection(string $sectionId): array
     {
@@ -139,7 +139,7 @@ final class AppleNewsClient
      * @param array<string> $articleIds List of article IDs to promote.
      * @return array<string, mixed> The decoded API response.
      * @throws AppleNewsException If the API returns an error.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/promote_articles_in_a_section
+     * @see https://developer.apple.com/documentation/applenewsapi/post-sections-_sectionid_-promotedarticles
      */
     public function promoteArticles(string $sectionId, array $articleIds): array
     {
@@ -168,7 +168,7 @@ final class AppleNewsClient
      * @param array<string, string> $assets Map of bundle:// URLs to file paths or raw binary content.
      * @return array<string, mixed> The decoded API response (including article ID).
      * @throws AppleNewsException If the API returns an error.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/create_an_article
+     * @see https://developer.apple.com/documentation/applenewsapi/post-channels-_channelid_-articles
      */
     public function createArticle(
         string $channelId,
@@ -239,7 +239,7 @@ final class AppleNewsClient
      * @param string $articleId Unique article ID.
      * @return array<string, mixed>
      * @throws AppleNewsException
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/read_article_information
+     * @see https://developer.apple.com/documentation/applenewsapi/get-articles-_articleid_
      */
     public function getArticle(string $articleId): array
     {
@@ -253,7 +253,7 @@ final class AppleNewsClient
      * @param array<string, mixed> $params Search parameters like pageSize, pageToken, fromDate, toDate.
      * @return array<string, mixed>
      * @throws AppleNewsException
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/search_articles
+     * @see https://developer.apple.com/documentation/applenewsapi/get-channels-_channelid_-articles
      */
     public function searchArticlesInChannel(string $channelId, array $params = []): array
     {
@@ -298,7 +298,7 @@ final class AppleNewsClient
      * @param array<string, string> $assets Assets for the updated article.
      * @return array<string, mixed>
      * @throws AppleNewsException
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/update_an_article
+     * @see https://developer.apple.com/documentation/applenewsapi/post-articles-_articleid_
      */
     public function updateArticle(
         string $articleId,
@@ -332,7 +332,7 @@ final class AppleNewsClient
      *
      * @param string $articleId The article ID to delete.
      * @throws AppleNewsException If deletion fails.
-     * @see https://developer.apple.com/documentation/applenews/apple_news_api/delete_an_article
+     * @see https://developer.apple.com/documentation/applenewsapi/delete-articles-_articleid_
      */
     public function deleteArticle(string $articleId): void
     {

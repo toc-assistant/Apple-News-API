@@ -15,7 +15,7 @@ use JsonException;
  * The message MUST contain an 'article.json' part and can optionally include
  * a 'metadata' part and binary parts for bundle resources (images, fonts, etc.).
  *
- * @see https://developer.apple.com/documentation/applenews/apple_news_api/create_an_article
+ * @see https://developer.apple.com/documentation/applenewsapi/post-channels-_channelid_-articles
  */
 final class MultipartBuilder
 {

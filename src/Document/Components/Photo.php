@@ -9,7 +9,7 @@ namespace TomGould\AppleNews\Document\Components;
  *
  * Supports remote URLs and local bundle resources.
  *
- * @see https://developer.apple.com/documentation/applenews/photo
+ * @see https://developer.apple.com/documentation/applenewsformat/photo
  */
 final class Photo extends Component
 {

@@ -18,7 +18,7 @@ use JsonException;
  * (components), layouts, text styles, and metadata. When serialized to JSON,
  * it produces the `article.json` file required by the Apple News API.
  *
- * @see https://developer.apple.com/documentation/applenews/articledocument
+ * @see https://developer.apple.com/documentation/applenewsformat/articledocument
  */
 final class Article implements JsonSerializable
 {
@@ -118,7 +118,7 @@ final class Article implements JsonSerializable
      * @param string $name The name of the layout (used in Component::setLayout()).
      * @param array<string, mixed> $layout Associative array of layout properties.
      * @return self
-     * @see https://developer.apple.com/documentation/applenews/componentlayout
+     * @see https://developer.apple.com/documentation/applenewsformat/componentlayout
      */
     public function addComponentLayout(string $name, array $layout): self
     {
@@ -132,7 +132,7 @@ final class Article implements JsonSerializable
      * @param string $name Name of the style (used in TextComponent::setTextStyle()).
      * @param ComponentTextStyle $style Style object.
      * @return self
-     * @see https://developer.apple.com/documentation/applenews/componenttextstyle
+     * @see https://developer.apple.com/documentation/applenewsformat/componenttextstyle
      */
     public function addComponentTextStyle(string $name, ComponentTextStyle $style): self
     {
@@ -146,7 +146,7 @@ final class Article implements JsonSerializable
      * @param string $name Name of the style (used in Component::setStyle()).
      * @param array<string, mixed> $style Associative array of style properties.
      * @return self
-     * @see https://developer.apple.com/documentation/applenews/componentstyle
+     * @see https://developer.apple.com/documentation/applenewsformat/componentstyle
      */
     public function addComponentStyle(string $name, array $style): self
     {
@@ -183,7 +183,7 @@ final class Article implements JsonSerializable
      *
      * @param array<string, mixed> $autoplacement
      * @return self
-     * @see https://developer.apple.com/documentation/applenews/autoplacement
+     * @see https://developer.apple.com/documentation/applenewsformat/autoplacement
      */
     public function setAutoplacement(array $autoplacement): self
     {

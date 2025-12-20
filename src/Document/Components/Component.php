@@ -12,7 +12,7 @@ use JsonSerializable;
  * All content in an Apple News article is built using components. This base
  * class provides common properties like layouts, styles, and behaviors.
  *
- * @see https://developer.apple.com/documentation/applenews/components
+ * @see https://developer.apple.com/documentation/applenewsformat/component
  */
 abstract class Component implements JsonSerializable
 {
@@ -95,7 +95,7 @@ abstract class Component implements JsonSerializable
      *
      * @param array<string, mixed> $animation Animation properties.
      * @return static
-     * @see https://developer.apple.com/documentation/applenews/animation
+     * @see https://developer.apple.com/documentation/applenewsformat/fadeinanimation
      */
     public function setAnimation(array $animation): static
     {
@@ -108,7 +108,7 @@ abstract class Component implements JsonSerializable
      *
      * @param array<string, mixed> $behavior Behavior properties (e.g., parallax).
      * @return static
-     * @see https://developer.apple.com/documentation/applenews/behavior
+     * @see https://developer.apple.com/documentation/applenewsformat/parallax
      */
     public function setBehavior(array $behavior): static
     {
@@ -132,7 +132,7 @@ abstract class Component implements JsonSerializable
      *
      * @param array<string, mixed> $conditional Array of conditions.
      * @return static
-     * @see https://developer.apple.com/documentation/applenews/conditionalcomponentproperty
+     * @see https://developer.apple.com/documentation/applenewsformat/condition
      */
     public function setConditional(array $conditional): static
     {

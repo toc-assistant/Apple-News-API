@@ -9,7 +9,7 @@ use JsonSerializable;
 /**
  * Global styles applied to the entire article document.
  *
- * @see https://developer.apple.com/documentation/applenews/documentstyle
+ * @see https://developer.apple.com/documentation/applenewsformat/documentstyle
  */
 final class DocumentStyle implements JsonSerializable
 {

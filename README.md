@@ -311,7 +311,7 @@ This library is open-sourced software licensed under the [MIT license](LICENSE).
 
 ## Links
 
-- [Apple News Format Documentation](https://developer.apple.com/documentation/applenews/apple_news_format)
-- [Apple News API Documentation](https://developer.apple.com/documentation/applenews/apple_news_api)
+- [Apple News Format Documentation](https://developer.apple.com/documentation/applenewsformat)
+- [Apple News API Documentation](https://developer.apple.com/documentation/applenewsapi)
 - [Packagist Package](https://packagist.org/packages/tomgould/apple-news-api)
 - [GitHub Repository](https://github.com/tomgould/apple-news-api)

@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * Component for embedding Instagram posts.
  *
- * @see https://developer.apple.com/documentation/applenews/instagram
+ * @see https://developer.apple.com/documentation/applenewsformat/instagram
  */
 final class Instagram extends Component
 {

@@ -13,7 +13,7 @@ use JsonSerializable;
  * Metadata provides information about the article that is not part of the
  * document content itself, such as authors, canonical URLs, and keywords.
  *
- * @see https://developer.apple.com/documentation/applenews/metadata
+ * @see https://developer.apple.com/documentation/applenewsformat/metadata
  */
 final class Metadata implements JsonSerializable
 {

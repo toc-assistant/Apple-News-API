@@ -10,7 +10,7 @@ namespace TomGould\AppleNews\Document\Components;
  * Containers are useful for applying shared layouts, backgrounds, or behaviors
  * to a set of child components.
  *
- * @see https://developer.apple.com/documentation/applenews/container
+ * @see https://developer.apple.com/documentation/applenewsformat/container
  */
 class Container extends Component
 {

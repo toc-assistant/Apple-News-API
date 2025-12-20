@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * A call-to-action button that links to an external URL or article section.
  *
- * @see https://developer.apple.com/documentation/applenews/linkbutton
+ * @see https://developer.apple.com/documentation/applenewsformat/linkbutton
  */
 final class LinkButton extends Component
 {

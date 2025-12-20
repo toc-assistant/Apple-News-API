@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * Component for embedding Facebook posts.
  *
- * @see https://developer.apple.com/documentation/applenews/facebookpost
+ * @see https://developer.apple.com/documentation/applenewsformat/facebookpost
  */
 final class FacebookPost extends Component
 {

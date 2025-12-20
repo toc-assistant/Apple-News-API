@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * Component for displaying native hosted videos.
  *
- * @see https://developer.apple.com/documentation/applenews/video-component
+ * @see https://developer.apple.com/documentation/applenewsformat/video
  */
 final class Video extends Component
 {

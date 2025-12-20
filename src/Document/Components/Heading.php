@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * A heading component (supports levels 1 through 6).
  *
- * @see https://developer.apple.com/documentation/applenews/heading
+ * @see https://developer.apple.com/documentation/applenewsformat/heading
  */
 final class Heading extends TextComponent
 {

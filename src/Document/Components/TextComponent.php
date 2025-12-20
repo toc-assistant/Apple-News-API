@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * Base class for all components that primarily contain text content.
  *
- * @see https://developer.apple.com/documentation/applenews/text-2
+ * @see https://developer.apple.com/documentation/applenewsformat/text
  */
 abstract class TextComponent extends Component
 {

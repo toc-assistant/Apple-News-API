@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Components;
 /**
  * Component for embedding X/Twitter posts.
  *
- * @see https://developer.apple.com/documentation/applenews/tweet
+ * @see https://developer.apple.com/documentation/applenewsformat/tweet
  */
 final class Tweet extends Component
 {
