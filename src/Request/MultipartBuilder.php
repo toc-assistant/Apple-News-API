@@ -85,7 +85,11 @@ final class MultipartBuilder
             throw new InvalidArgumentException("Asset file not found: {$filePath}");
         }
 
-        $content = file_get_contents($filePath);
+        if (is_dir($filePath)) {
+            throw new RuntimeException("Failed to read asset file: {$filePath}");
+        }
+
+        $content = @file_get_contents($filePath);
         if ($content === false) {
             throw new RuntimeException("Failed to read asset file: {$filePath}");
         }
