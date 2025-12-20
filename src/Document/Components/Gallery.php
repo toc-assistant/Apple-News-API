@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Gallery component for displaying multiple images.
+ * Component for displaying a collection of images as a gallery.
  *
  * @see https://developer.apple.com/documentation/apple_news/gallery
  */
 final class Gallery extends Component
 {
-    /** @var array<array<string, mixed>> */
+    /** @var array<array<string, mixed>> List of gallery images. */
     private array $items = [];
 
     public function getRole(): string
@@ -22,9 +22,10 @@ final class Gallery extends Component
     /**
      * Add an image to the gallery.
      *
-     * @param string $url Image URL (bundle:// or http(s)://)
-     * @param string|null $caption Optional caption
-     * @param string|null $accessibilityCaption Optional accessibility caption
+     * @param string $url Image URL (bundle:// or http).
+     * @param string|null $caption Optional visible caption.
+     * @param string|null $accessibilityCaption Optional VoiceOver caption.
+     * @return self
      */
     public function addItem(string $url, ?string $caption = null, ?string $accessibilityCaption = null): self
     {
@@ -52,3 +53,4 @@ final class Gallery extends Component
         return $data;
     }
 }
+

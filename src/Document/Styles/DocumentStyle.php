@@ -7,7 +7,7 @@ namespace TomGould\AppleNews\Document\Styles;
 use JsonSerializable;
 
 /**
- * Document-level styles for Apple News Format.
+ * Global styles applied to the entire article document.
  *
  * @see https://developer.apple.com/documentation/apple_news/documentstyle
  */
@@ -16,7 +16,9 @@ final class DocumentStyle implements JsonSerializable
     private ?string $backgroundColor = null;
 
     /**
-     * Set the background color.
+     * Set the global background color of the article.
+     * @param string $color Hex code or named color.
+     * @return self
      */
     public function setBackgroundColor(string $color): self
     {
@@ -38,3 +40,4 @@ final class DocumentStyle implements JsonSerializable
         return $data;
     }
 }
+

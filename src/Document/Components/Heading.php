@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Heading component (heading, heading1, heading2, etc.).
+ * A heading component (supports levels 1 through 6).
  *
  * @see https://developer.apple.com/documentation/apple_news/heading
  */
 final class Heading extends TextComponent
 {
+    /**
+     * @param string $text Heading text.
+     * @param int $level Heading level (1-6).
+     */
     public function __construct(
         string $text,
         private readonly int $level = 1
@@ -27,3 +31,4 @@ final class Heading extends TextComponent
         return 'heading' . min(max($this->level, 1), 6);
     }
 }
+

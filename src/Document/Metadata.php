@@ -10,34 +10,59 @@ use JsonSerializable;
 /**
  * Article metadata for Apple News Format.
  *
+ * Metadata provides information about the article that is not part of the
+ * document content itself, such as authors, canonical URLs, and keywords.
+ *
  * @see https://developer.apple.com/documentation/apple_news/metadata
  */
 final class Metadata implements JsonSerializable
 {
-    /** @var array<string> */
+    /** @var array<string> List of author names. */
     private array $authors = [];
 
+    /** @var string|null Canonical URL of the original article. */
     private ?string $canonicalURL = null;
+
+    /** @var string|null ISO 8601 creation date. */
     private ?string $dateCreated = null;
+
+    /** @var string|null ISO 8601 modification date. */
     private ?string $dateModified = null;
+
+    /** @var string|null ISO 8601 publication date. */
     private ?string $datePublished = null;
+
+    /** @var string|null Short summary of the article. */
     private ?string $excerpt = null;
+
+    /** @var string|null CMS or tool that generated the article. */
     private ?string $generatorIdentifier = null;
+
+    /** @var string|null Name of the generator tool. */
     private ?string $generatorName = null;
+
+    /** @var string|null Version of the generator tool. */
     private ?string $generatorVersion = null;
 
-    /** @var array<string> */
+    /** @var array<string> List of tags/keywords. */
     private array $keywords = [];
 
-    /** @var array<array<string, string>> */
+    /** @var array<array<string, string>> Relationship links. */
     private array $links = [];
 
+    /** @var string|null URL for the article's tile image. */
     private ?string $thumbnailURL = null;
+
+    /** @var bool|null Whether the toolbar should be transparent. */
     private ?bool $transparentToolbar = null;
+
+    /** @var string|null URL for a video to play in the article tile. */
     private ?string $videoURL = null;
 
     /**
-     * Add an author.
+     * Add an author name.
+     * @param string $author
+     * @return self
      */
     public function addAuthor(string $author): self
     {
@@ -47,6 +72,8 @@ final class Metadata implements JsonSerializable
 
     /**
      * Set the canonical URL.
+     * @param string $url
+     * @return self
      */
     public function setCanonicalURL(string $url): self
     {
@@ -55,7 +82,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the date created.
+     * Set the date the article was created.
+     * @param DateTimeInterface|string $date
+     * @return self
      */
     public function setDateCreated(DateTimeInterface|string $date): self
     {
@@ -66,7 +95,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the date modified.
+     * Set the date the article was last modified.
+     * @param DateTimeInterface|string $date
+     * @return self
      */
     public function setDateModified(DateTimeInterface|string $date): self
     {
@@ -77,7 +108,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the date published.
+     * Set the date the article was published.
+     * @param DateTimeInterface|string $date
+     * @return self
      */
     public function setDatePublished(DateTimeInterface|string $date): self
     {
@@ -88,7 +121,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the excerpt.
+     * Set the article excerpt/summary.
+     * @param string $excerpt
+     * @return self
      */
     public function setExcerpt(string $excerpt): self
     {
@@ -97,7 +132,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the generator identifier.
+     * Set the generator identifier (e.g., 'Drupal').
+     * @param string $identifier
+     * @return self
      */
     public function setGeneratorIdentifier(string $identifier): self
     {
@@ -106,7 +143,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the generator name.
+     * Set the name of the tool that generated this document.
+     * @param string $name
+     * @return self
      */
     public function setGeneratorName(string $name): self
     {
@@ -115,7 +154,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the generator version.
+     * Set the version string for the generator tool.
+     * @param string $version
+     * @return self
      */
     public function setGeneratorVersion(string $version): self
     {
@@ -124,7 +165,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Add a keyword.
+     * Add a single keyword.
+     * @param string $keyword
+     * @return self
      */
     public function addKeyword(string $keyword): self
     {
@@ -133,9 +176,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Add multiple keywords.
-     *
+     * Add multiple keywords at once.
      * @param array<string> $keywords
+     * @return self
      */
     public function addKeywords(array $keywords): self
     {
@@ -146,7 +189,10 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Add a linked article.
+     * Add a link to a related article or resource.
+     * @param string $url Target URL.
+     * @param string $relationship Relationship type (e.g., 'related').
+     * @return self
      */
     public function addLinkedArticle(string $url, string $relationship): self
     {
@@ -158,7 +204,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the thumbnail URL.
+     * Set the thumbnail image URL for article discovery.
+     * @param string $url
+     * @return self
      */
     public function setThumbnailURL(string $url): self
     {
@@ -167,7 +215,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set transparent toolbar.
+     * Enable or disable transparent toolbar in the news app.
+     * @param bool $transparent
+     * @return self
      */
     public function setTransparentToolbar(bool $transparent): self
     {
@@ -176,7 +226,9 @@ final class Metadata implements JsonSerializable
     }
 
     /**
-     * Set the video URL for the article tile.
+     * Set the video URL to be used in the article tile.
+     * @param string $url
+     * @return self
      */
     public function setVideoURL(string $url): self
     {

@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Container component for grouping other components.
+ * A container component used to group other components together.
+ *
+ * Containers are useful for applying shared layouts, backgrounds, or behaviors
+ * to a set of child components.
  *
  * @see https://developer.apple.com/documentation/apple_news/container
  */
 class Container extends Component
 {
-    /** @var array<Component> */
+    /** @var array<Component> Child components. */
     protected array $components = [];
 
+    /** @var string|null Layout mode for child components. */
     protected ?string $contentDisplay = null;
 
     public function getRole(): string
@@ -22,7 +26,9 @@ class Container extends Component
     }
 
     /**
-     * Add a component to the container.
+     * Add a child component to this container.
+     * @param Component $component
+     * @return self
      */
     public function addComponent(Component $component): self
     {
@@ -31,7 +37,9 @@ class Container extends Component
     }
 
     /**
-     * Set content display mode.
+     * Set the content display mode (e.g., for horizontal scrolling).
+     * @param string $contentDisplay
+     * @return self
      */
     public function setContentDisplay(string $contentDisplay): self
     {
@@ -60,3 +68,4 @@ class Container extends Component
         return $data;
     }
 }
+

@@ -7,22 +7,26 @@ namespace TomGould\AppleNews\Client;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use InvalidArgumentException;
 
 /**
  * Handles HMAC-SHA256 authentication for Apple News API requests.
  *
- * Apple News uses a custom HMAC authentication scheme where requests are signed
- * using the API secret key. The signature is computed from:
- * - HTTP method (uppercase)
- * - Full request URL
- * - ISO 8601 date
- * - For POST requests: Content-Type header + request body
+ * Apple News uses a custom HMAC authentication scheme (HHMAC) where requests are
+ * signed using the API secret key. The signature is computed from a canonical
+ * string including the method, URL, date, and optionally the body for POSTs.
+ *
+ * @see https://developer.apple.com/documentation/apple_news/apple_news_api/authenticating_with_the_apple_news_api
  */
 final class Authenticator
 {
     private const DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
     private const HASH_ALGORITHM = 'sha256';
 
+    /**
+     * @param string $keyId The API Key ID provided by Apple.
+     * @param string $keySecret The API Secret provided by Apple (Base64 encoded).
+     */
     public function __construct(
         private readonly string $keyId,
         private readonly string $keySecret
@@ -30,15 +34,16 @@ final class Authenticator
     }
 
     /**
-     * Generate the Authorization header value for a request.
+     * Generate the Authorization header and date for a request.
      *
-     * @param string $method HTTP method (GET, POST, DELETE)
-     * @param string $url Full request URL
-     * @param string|null $contentType Content-Type header (required for POST)
-     * @param string|null $body Request body (required for POST)
-     * @param DateTimeInterface|null $date Date for the signature (defaults to now)
+     * @param string $method HTTP method (GET, POST, DELETE, etc.)
+     * @param string $url The full request URL including protocol and query params.
+     * @param string|null $contentType Required for POST requests (e.g., application/json or multipart/form-data).
+     * @param string|null $body Required for POST requests. The raw body content to sign.
+     * @param DateTimeInterface|null $date The date for the signature. Defaults to current UTC time.
      *
-     * @return array{authorization: string, date: string}
+     * @return array{authorization: string, date: string} Returns the header value and the date string used.
+     * @throws InvalidArgumentException if the secret key cannot be decoded.
      */
     public function sign(
         string $method,
@@ -72,10 +77,17 @@ final class Authenticator
     }
 
     /**
-     * Build the canonical request string for HMAC signing.
+     * Build the canonical request string used as input for the HMAC hash.
      *
-     * For GET/DELETE: METHOD + URL + DATE
-     * For POST: METHOD + URL + DATE + CONTENT_TYPE + BODY
+     * For GET/DELETE: method + url + date
+     * For POST: method + url + date + content-type + body
+     *
+     * @param string $method Uppercase HTTP method.
+     * @param string $url Full request URL.
+     * @param string $date ISO 8601 date string.
+     * @param string|null $contentType Content type string.
+     * @param string|null $body Raw body content.
+     * @return string
      */
     private function buildCanonicalRequest(
         string $method,
@@ -86,7 +98,7 @@ final class Authenticator
     ): string {
         $canonical = $method . $url . $date;
 
-        // POST requests include Content-Type and body
+        // POST requests include Content-Type and body in the signature
         if ($method === 'POST' && $contentType !== null && $body !== null) {
             $canonical .= $contentType . $body;
         }
@@ -95,19 +107,19 @@ final class Authenticator
     }
 
     /**
-     * Create the HMAC-SHA256 signature.
+     * Create the HMAC-SHA256 signature from the canonical request.
      *
-     * 1. Base64 decode the secret key
-     * 2. HMAC-SHA256 hash the canonical request
-     * 3. Base64 encode the result
+     * @param string $canonicalRequest The string to hash.
+     * @return string Base64 encoded signature.
+     * @throws InvalidArgumentException if the secret is not valid Base64.
      */
     private function createSignature(string $canonicalRequest): string
     {
-        // The API secret is provided as a Base64-encoded string
+        // The API secret is provided as a Base64-encoded string by Apple
         $decodedSecret = base64_decode($this->keySecret, true);
 
         if ($decodedSecret === false) {
-            throw new \InvalidArgumentException('Invalid Base64-encoded API secret');
+            throw new InvalidArgumentException('Invalid Base64-encoded API secret provided to Authenticator.');
         }
 
         $hash = hash_hmac(self::HASH_ALGORITHM, $canonicalRequest, $decodedSecret, true);
@@ -116,10 +128,12 @@ final class Authenticator
     }
 
     /**
-     * Get the API Key ID.
+     * Get the configured API Key ID.
+     * @return string
      */
     public function getKeyId(): string
     {
         return $this->keyId;
     }
 }
+

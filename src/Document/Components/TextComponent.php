@@ -5,16 +5,24 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Base class for text-based components.
+ * Base class for all components that primarily contain text content.
  *
  * @see https://developer.apple.com/documentation/apple_news/text-2
  */
 abstract class TextComponent extends Component
 {
+    /** @var string|null Reference to a named text style. */
     protected ?string $textStyle = null;
+
+    /** @var array<array<string, mixed>>|null Inline style overrides. */
     protected ?array $inlineTextStyles = null;
+
+    /** @var string|null The text format (none, html, markdown). */
     protected ?string $format = null;
 
+    /**
+     * @param string $text The raw text content.
+     */
     public function __construct(
         protected readonly string $text
     ) {
@@ -22,6 +30,8 @@ abstract class TextComponent extends Component
 
     /**
      * Set the text style name.
+     * @param string $textStyle
+     * @return static
      */
     public function setTextStyle(string $textStyle): static
     {
@@ -30,9 +40,9 @@ abstract class TextComponent extends Component
     }
 
     /**
-     * Set inline text styles.
-     *
+     * Define specific styles for ranges of text within this component.
      * @param array<array<string, mixed>> $styles
+     * @return static
      */
     public function setInlineTextStyles(array $styles): static
     {
@@ -41,7 +51,9 @@ abstract class TextComponent extends Component
     }
 
     /**
-     * Set the text format (none, html, markdown).
+     * Set the format of the text content ('html' or 'markdown').
+     * @param string $format
+     * @return static
      */
     public function setFormat(string $format): static
     {
@@ -72,3 +84,4 @@ abstract class TextComponent extends Component
         return $data;
     }
 }
+

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Instagram component for embedding Instagram posts.
+ * Component for embedding Instagram posts.
  *
  * @see https://developer.apple.com/documentation/apple_news/instagram
  */
 final class Instagram extends Component
 {
+    /**
+     * @param string $url The direct URL to the Instagram post.
+     */
     public function __construct(
         private readonly string $url
     ) {
@@ -31,3 +34,4 @@ final class Instagram extends Component
         return $data;
     }
 }
+

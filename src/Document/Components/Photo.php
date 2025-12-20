@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Photo component for displaying images.
+ * Component for displaying single images in an article.
+ *
+ * Supports remote URLs and local bundle resources.
  *
  * @see https://developer.apple.com/documentation/apple_news/photo
  */
@@ -15,13 +17,18 @@ final class Photo extends Component
     private ?string $accessibilityCaption = null;
     private ?bool $explicitContent = null;
 
+    /**
+     * @param string $url The image URL (bundle://... or http...).
+     */
     public function __construct(
         private readonly string $url
     ) {
     }
 
     /**
-     * Create a photo from a bundle URL.
+     * Create a photo referencing a file in the multipart bundle.
+     * @param string $filename
+     * @return self
      */
     public static function fromBundle(string $filename): self
     {
@@ -29,7 +36,9 @@ final class Photo extends Component
     }
 
     /**
-     * Create a photo from a remote URL.
+     * Create a photo referencing an external image URL.
+     * @param string $url
+     * @return self
      */
     public static function fromUrl(string $url): self
     {
@@ -42,7 +51,9 @@ final class Photo extends Component
     }
 
     /**
-     * Set the caption.
+     * Set a visible caption.
+     * @param string $caption
+     * @return self
      */
     public function setCaption(string $caption): self
     {
@@ -51,7 +62,9 @@ final class Photo extends Component
     }
 
     /**
-     * Set the accessibility caption.
+     * Set a VoiceOver accessibility description.
+     * @param string $caption
+     * @return self
      */
     public function setAccessibilityCaption(string $caption): self
     {
@@ -60,7 +73,9 @@ final class Photo extends Component
     }
 
     /**
-     * Mark as explicit content.
+     * Mark the image as explicit content.
+     * @param bool $explicit
+     * @return self
      */
     public function setExplicitContent(bool $explicit): self
     {
@@ -91,3 +106,4 @@ final class Photo extends Component
         return $data;
     }
 }
+

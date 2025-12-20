@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Video component for displaying video content.
+ * Component for displaying native hosted videos.
  *
  * @see https://developer.apple.com/documentation/apple_news/video-component
  */
@@ -16,6 +16,9 @@ final class Video extends Component
     private ?string $accessibilityCaption = null;
     private ?bool $explicitContent = null;
 
+    /**
+     * @param string $url Direct URL to the video file.
+     */
     public function __construct(
         private readonly string $url
     ) {
@@ -27,7 +30,9 @@ final class Video extends Component
     }
 
     /**
-     * Set the caption.
+     * Set the visible caption.
+     * @param string $caption
+     * @return self
      */
     public function setCaption(string $caption): self
     {
@@ -36,7 +41,9 @@ final class Video extends Component
     }
 
     /**
-     * Set the still image URL (thumbnail).
+     * Set the thumbnail image URL to show before the video plays.
+     * @param string $stillURL
+     * @return self
      */
     public function setStillURL(string $stillURL): self
     {
@@ -45,7 +52,9 @@ final class Video extends Component
     }
 
     /**
-     * Set the accessibility caption.
+     * Set VoiceOver accessibility caption.
+     * @param string $caption
+     * @return self
      */
     public function setAccessibilityCaption(string $caption): self
     {
@@ -54,7 +63,9 @@ final class Video extends Component
     }
 
     /**
-     * Mark as explicit content.
+     * Mark video as containing explicit content.
+     * @param bool $explicit
+     * @return self
      */
     public function setExplicitContent(bool $explicit): self
     {
@@ -89,3 +100,4 @@ final class Video extends Component
         return $data;
     }
 }
+

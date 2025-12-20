@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace TomGould\AppleNews\Request;
 
+use InvalidArgumentException;
+use RuntimeException;
+use JsonException;
+
 /**
- * Builds multipart/form-data request bodies for Apple News API.
+ * Builds multipart/form-data request bodies for the Apple News API.
  *
- * Apple News requires articles to be submitted as MIME multipart messages
- * containing at least article.json, plus any bundled resources.
+ * Apple News requires articles to be submitted as MIME multipart messages.
+ * The message MUST contain an 'article.json' part and can optionally include
+ * a 'metadata' part and binary parts for bundle resources (images, fonts, etc.).
+ *
+ * @see https://developer.apple.com/documentation/apple_news/apple_news_api/create_an_article
  */
 final class MultipartBuilder
 {
@@ -19,13 +26,21 @@ final class MultipartBuilder
     /** @var array<int, array{name: string, filename: string|null, contentType: string, content: string}> */
     private array $parts = [];
 
+    /**
+     * @param string|null $boundary Optional custom boundary string.
+     */
     public function __construct(?string $boundary = null)
     {
         $this->boundary = $boundary ?? bin2hex(random_bytes(16));
     }
 
     /**
-     * Add a JSON part (article.json or metadata).
+     * Add a JSON part to the multipart body.
+     *
+     * @param string $name The part name (e.g., 'article.json', 'metadata').
+     * @param string $json The JSON string.
+     * @param string|null $filename Optional filename for the part.
+     * @return self
      */
     public function addJson(string $name, string $json, ?string $filename = null): self
     {
@@ -33,7 +48,10 @@ final class MultipartBuilder
     }
 
     /**
-     * Add the article.json document.
+     * Convenience method to add the 'article.json' document part.
+     *
+     * @param string $json The ANF JSON string.
+     * @return self
      */
     public function addArticle(string $json): self
     {
@@ -41,9 +59,11 @@ final class MultipartBuilder
     }
 
     /**
-     * Add article metadata.
+     * Convenience method to add article metadata.
      *
-     * @param array<string, mixed> $metadata
+     * @param array<string, mixed> $metadata Metadata array (wrapped in 'data' key automatically).
+     * @return self
+     * @throws JsonException
      */
     public function addMetadata(array $metadata): self
     {
@@ -51,17 +71,23 @@ final class MultipartBuilder
     }
 
     /**
-     * Add an image from file path.
+     * Add an image part from a local file path.
+     *
+     * @param string $name The part name/bundle identifier.
+     * @param string $filePath Absolute path to the local file.
+     * @return self
+     * @throws InvalidArgumentException if file doesn't exist.
+     * @throws RuntimeException if file cannot be read.
      */
     public function addImageFile(string $name, string $filePath): self
     {
         if (!file_exists($filePath)) {
-            throw new \InvalidArgumentException("File not found: {$filePath}");
+            throw new InvalidArgumentException("Asset file not found: {$filePath}");
         }
 
         $content = file_get_contents($filePath);
         if ($content === false) {
-            throw new \RuntimeException("Failed to read file: {$filePath}");
+            throw new RuntimeException("Failed to read asset file: {$filePath}");
         }
 
         $contentType = $this->guessImageContentType($filePath);
@@ -71,7 +97,13 @@ final class MultipartBuilder
     }
 
     /**
-     * Add an image from binary content.
+     * Add an image part from raw binary content.
+     *
+     * @param string $name The part name.
+     * @param string $content Raw binary data.
+     * @param string $filename The filename to present in the part header.
+     * @param string|null $contentType Optional MIME type. Guessed from filename if null.
+     * @return self
      */
     public function addImage(string $name, string $content, string $filename, ?string $contentType = null): self
     {
@@ -80,7 +112,12 @@ final class MultipartBuilder
     }
 
     /**
-     * Add a font file.
+     * Add a font file part.
+     *
+     * @param string $name The part name.
+     * @param string $content Raw binary font data.
+     * @param string $filename The font filename.
+     * @return self
      */
     public function addFont(string $name, string $content, string $filename): self
     {
@@ -88,7 +125,13 @@ final class MultipartBuilder
     }
 
     /**
-     * Add a generic part to the multipart body.
+     * Core method to add a generic part to the multipart body.
+     *
+     * @param string $name Part name.
+     * @param string $content Content data.
+     * @param string $contentType MIME content type.
+     * @param string|null $filename Optional filename.
+     * @return self
      */
     public function addPart(string $name, string $content, string $contentType, ?string $filename = null): self
     {
@@ -103,7 +146,8 @@ final class MultipartBuilder
     }
 
     /**
-     * Build the complete multipart body.
+     * Build the complete multipart raw body string.
+     * @return string
      */
     public function build(): string
     {
@@ -131,7 +175,8 @@ final class MultipartBuilder
     }
 
     /**
-     * Get the Content-Type header value.
+     * Get the full Content-Type header value required for this request.
+     * @return string
      */
     public function getContentType(): string
     {
@@ -139,7 +184,8 @@ final class MultipartBuilder
     }
 
     /**
-     * Get the boundary string.
+     * Get the random boundary string used.
+     * @return string
      */
     public function getBoundary(): string
     {
@@ -147,7 +193,10 @@ final class MultipartBuilder
     }
 
     /**
-     * Guess the image content type from filename.
+     * Guess the MIME content type based on the file extension.
+     *
+     * @param string $filename
+     * @return string
      */
     private function guessImageContentType(string $filename): string
     {
@@ -161,3 +210,4 @@ final class MultipartBuilder
         };
     }
 }
+

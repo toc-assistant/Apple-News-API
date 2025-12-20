@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Facebook Post component for embedding Facebook posts.
+ * Component for embedding Facebook posts.
  *
  * @see https://developer.apple.com/documentation/apple_news/facebookpost
  */
 final class FacebookPost extends Component
 {
+    /**
+     * @param string $url The URL of the Facebook post.
+     */
     public function __construct(
         private readonly string $url
     ) {
@@ -31,3 +34,4 @@ final class FacebookPost extends Component
         return $data;
     }
 }
+

@@ -7,15 +7,25 @@ namespace TomGould\AppleNews\Document\Layouts;
 use JsonSerializable;
 
 /**
- * Defines the column system for an article.
+ * Defines the column system and base grid for an article.
+ *
+ * Every Apple News article requires a layout object to determine how components
+ * are positioned relative to the grid columns.
  *
  * @see https://developer.apple.com/documentation/apple_news/layout
  */
 final class Layout implements JsonSerializable
 {
+    /** @var int|null Space outside the content area. */
     private ?int $margin = null;
+
+    /** @var int|null Space between columns. */
     private ?int $gutter = null;
 
+    /**
+     * @param int $columns Total number of columns in the grid.
+     * @param int $width Total width of the article in points.
+     */
     public function __construct(
         private readonly int $columns,
         private readonly int $width
@@ -23,7 +33,9 @@ final class Layout implements JsonSerializable
     }
 
     /**
-     * Set the margin (space outside the content area).
+     * Set the horizontal margin for the article content.
+     * @param int $margin
+     * @return self
      */
     public function setMargin(int $margin): self
     {
@@ -32,7 +44,9 @@ final class Layout implements JsonSerializable
     }
 
     /**
-     * Set the gutter (space between columns).
+     * Set the space (gutter) between columns.
+     * @param int $gutter
+     * @return self
      */
     public function setGutter(int $gutter): self
     {
@@ -61,3 +75,4 @@ final class Layout implements JsonSerializable
         return $data;
     }
 }
+

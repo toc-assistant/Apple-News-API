@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Divider component for visual separation.
+ * A visual separator line used between other components.
  *
  * @see https://developer.apple.com/documentation/apple_news/divider
  */
@@ -19,9 +19,9 @@ final class Divider extends Component
     }
 
     /**
-     * Set the stroke style.
-     *
+     * Define the style of the line (color, width).
      * @param array<string, mixed> $stroke
+     * @return self
      */
     public function setStroke(array $stroke): self
     {
@@ -43,3 +43,4 @@ final class Divider extends Component
         return $data;
     }
 }
+

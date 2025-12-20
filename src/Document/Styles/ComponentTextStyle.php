@@ -7,7 +7,9 @@ namespace TomGould\AppleNews\Document\Styles;
 use JsonSerializable;
 
 /**
- * Text styles for components in Apple News Format.
+ * Detailed text styling options for components.
+ *
+ * This class controls typography including fonts, colors, spacing, and alignment.
  *
  * @see https://developer.apple.com/documentation/apple_news/componenttextstyle
  */
@@ -34,7 +36,9 @@ final class ComponentTextStyle implements JsonSerializable
     private ?int $hangingPunctuation = null;
 
     /**
-     * Set the font name.
+     * Set the font family name.
+     * @param string $fontName
+     * @return self
      */
     public function setFontName(string $fontName): self
     {
@@ -43,7 +47,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the font size.
+     * Set the font size in points.
+     * @param int $fontSize
+     * @return self
      */
     public function setFontSize(int $fontSize): self
     {
@@ -53,6 +59,8 @@ final class ComponentTextStyle implements JsonSerializable
 
     /**
      * Set the text color.
+     * @param string $color
+     * @return self
      */
     public function setTextColor(string $color): self
     {
@@ -61,7 +69,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the text alignment.
+     * Set text alignment (left, center, right, justify).
+     * @param string $alignment
+     * @return self
      */
     public function setTextAlignment(string $alignment): self
     {
@@ -70,7 +80,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the line height.
+     * Set the line height in points.
+     * @param float $lineHeight
+     * @return self
      */
     public function setLineHeight(float $lineHeight): self
     {
@@ -79,7 +91,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the letter spacing (tracking).
+     * Set letter spacing (tracking).
+     * @param float $tracking
+     * @return self
      */
     public function setTracking(float $tracking): self
     {
@@ -88,7 +102,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Enable or disable hyphenation.
+     * Enable or disable automatic hyphenation.
+     * @param bool $hyphenation
+     * @return self
      */
     public function setHyphenation(bool $hyphenation): self
     {
@@ -97,7 +113,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the font weight.
+     * Set font weight (e.g., "bold", "100").
+     * @param string $weight
+     * @return self
      */
     public function setFontWeight(string $weight): self
     {
@@ -106,7 +124,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the font style (normal, italic, oblique).
+     * Set font style (normal, italic).
+     * @param string $style
+     * @return self
      */
     public function setFontStyle(string $style): self
     {
@@ -116,6 +136,8 @@ final class ComponentTextStyle implements JsonSerializable
 
     /**
      * Set text decoration (underline, line-through).
+     * @param string $decoration
+     * @return self
      */
     public function setTextDecoration(string $decoration): self
     {
@@ -125,6 +147,8 @@ final class ComponentTextStyle implements JsonSerializable
 
     /**
      * Set text transform (uppercase, lowercase, capitalize).
+     * @param string $transform
+     * @return self
      */
     public function setTextTransform(string $transform): self
     {
@@ -133,9 +157,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the link style.
-     *
+     * Define styles for links within the text.
      * @param array<string, mixed> $style
+     * @return self
      */
     public function setLinkStyle(array $style): self
     {
@@ -144,9 +168,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the drop cap style.
-     *
+     * Define the drop cap style for the first letter.
      * @param array<string, mixed> $style
+     * @return self
      */
     public function setDropCapStyle(array $style): self
     {
@@ -155,7 +179,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the background color.
+     * Set background color for the text span.
+     * @param string $color
+     * @return self
      */
     public function setBackgroundColor(string $color): self
     {
@@ -164,9 +190,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set the text shadow.
-     *
+     * Apply a shadow effect to the text.
      * @param array<string, mixed> $shadow
+     * @return self
      */
     public function setTextShadow(array $shadow): self
     {
@@ -175,7 +201,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set paragraph spacing before.
+     * Set spacing before paragraphs.
+     * @param int $spacing
+     * @return self
      */
     public function setParagraphSpacingBefore(int $spacing): self
     {
@@ -184,7 +212,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set paragraph spacing after.
+     * Set spacing after paragraphs.
+     * @param int $spacing
+     * @return self
      */
     public function setParagraphSpacingAfter(int $spacing): self
     {
@@ -193,7 +223,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set first line indent.
+     * Set the indentation of the first line.
+     * @param int $indent
+     * @return self
      */
     public function setFirstLineIndent(int $indent): self
     {
@@ -202,7 +234,9 @@ final class ComponentTextStyle implements JsonSerializable
     }
 
     /**
-     * Set hanging punctuation.
+     * Control hanging punctuation (e.g., quotes outside the alignment).
+     * @param int $value
+     * @return self
      */
     public function setHangingPunctuation(int $value): self
     {
@@ -296,3 +330,4 @@ final class ComponentTextStyle implements JsonSerializable
         return $data;
     }
 }
+

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Title component.
+ * The main title component for an article.
  *
  * @see https://developer.apple.com/documentation/apple_news/title
  */
@@ -16,3 +16,4 @@ final class Title extends TextComponent
         return 'title';
     }
 }
+

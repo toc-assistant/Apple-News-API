@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * EmbedWebVideo component for embedding YouTube, Vimeo, etc.
+ * Embeds third-party video content (YouTube, Vimeo, etc.).
  *
  * @see https://developer.apple.com/documentation/apple_news/embedwebvideo
  */
@@ -16,6 +16,9 @@ final class EmbedWebVideo extends Component
     private ?bool $explicitContent = null;
     private ?string $aspectRatio = null;
 
+    /**
+     * @param string $url The direct URL to the web video page.
+     */
     public function __construct(
         private readonly string $url
     ) {
@@ -27,7 +30,9 @@ final class EmbedWebVideo extends Component
     }
 
     /**
-     * Set the caption.
+     * Set a visible caption for the video.
+     * @param string $caption
+     * @return self
      */
     public function setCaption(string $caption): self
     {
@@ -36,7 +41,9 @@ final class EmbedWebVideo extends Component
     }
 
     /**
-     * Set the accessibility caption.
+     * Set a caption for VoiceOver users.
+     * @param string $caption
+     * @return self
      */
     public function setAccessibilityCaption(string $caption): self
     {
@@ -45,7 +52,9 @@ final class EmbedWebVideo extends Component
     }
 
     /**
-     * Mark as explicit content.
+     * Mark the video as containing explicit content.
+     * @param bool $explicit
+     * @return self
      */
     public function setExplicitContent(bool $explicit): self
     {
@@ -54,7 +63,9 @@ final class EmbedWebVideo extends Component
     }
 
     /**
-     * Set the aspect ratio (e.g., "1.777" for 16:9).
+     * Set the aspect ratio of the video player (e.g., "1.777" for 16:9).
+     * @param string $aspectRatio
+     * @return self
      */
     public function setAspectRatio(string $aspectRatio): self
     {
@@ -89,3 +100,4 @@ final class EmbedWebVideo extends Component
         return $data;
     }
 }
+

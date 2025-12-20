@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Pullquote component for highlighting quotes.
+ * Component for highlighting a quote within an article.
  *
  * @see https://developer.apple.com/documentation/apple_news/pullquote
  */
@@ -16,3 +16,4 @@ final class Pullquote extends TextComponent
         return 'pullquote';
     }
 }
+
