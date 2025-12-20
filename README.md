@@ -26,11 +26,24 @@ You also need a PSR-18 HTTP client and PSR-17 factories. Guzzle is the standard 
 composer require guzzlehttp/guzzle guzzlehttp/psr7
 ```
 
-## Usage Overview
+---
 
-### 1. Initialize the Client
+## Full Implementation Guide
 
-The client requires your Apple News API credentials, an HTTP client, and PSR-17 factories for requests and streams.
+This guide covers the end-to-end workflow for publishing content to Apple News using this library.
+
+### 1. Prerequisites & Security
+
+Before you begin, ensure you have your credentials from **Apple News Publisher**:
+- **Channel ID**: A UUID identifying your publication.
+- **API Key ID**: A UUID identifying your API key.
+- **API Key Secret**: A Base64-encoded string used for signing requests.
+
+The library handles the HMAC-SHA256 signing process automatically using the `Authenticator` class.
+
+### 2. Client Initialization
+
+The `AppleNewsClient` uses PSR interfaces, making it compatible with any modern HTTP library.
 
 ```php
 use TomGould\AppleNews\Client\AppleNewsClient;
@@ -38,41 +51,103 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 
 $factory = new HttpFactory();
+$httpClient = new Client();
 
 $client = AppleNewsClient::create(
     keyId: 'your-key-id',
-    keySecret: 'your-base64-encoded-secret',
-    httpClient: new Client(),
+    keySecret: 'your-base64-secret',
+    httpClient: $httpClient,
     requestFactory: $factory,
     streamFactory: $factory
 );
 ```
 
-### 2. Build an Article
+### 3. Building an Article (ANF)
 
-The library uses a fluent interface to build ANF documents.
+Apple News Format (ANF) is a JSON-based document format. This library provides a fluent builder to construct these documents.
 
+#### A. Create the Article Object
 ```php
 use TomGould\AppleNews\Document\Article;
-use TomGould\AppleNews\Document\Components\{Title, Body, Photo};
 
 $article = Article::create(
-    identifier: 'article-unique-id',
-    title: 'Hello World',
-    language: 'en'
-)
-->addComponent(new Title('Welcome to Apple News'))
-->addComponent(
-    (new Body('This is the main content.'))
-        ->setFormat('markdown')
-)
-->addComponent(
-    Photo::fromUrl('[https://example.com/hero.jpg](https://example.com/hero.jpg)')
-        ->setCaption('A nice hero image')
+    identifier: 'my-internal-id-123',
+    title: 'The Future of Web Development',
+    language: 'en',
+    columns: 7, // Default ANF grid columns
+    width: 1024 // Default points
 );
 ```
 
-### 3. Publish to a Channel
+#### B. Add Metadata
+Metadata includes author information, keywords, and URLs for discovery.
+```php
+use TomGould\AppleNews\Document\Metadata;
+
+$metadata = (new Metadata())
+    ->addAuthor('Jane Doe')
+    ->setExcerpt('An in-depth look at modern web frameworks.')
+    ->addKeywords(['PHP', 'Web', 'Programming'])
+    ->setDatePublished(new DateTime());
+
+$article->setMetadata($metadata);
+```
+
+#### C. Define Reusable Styles
+Instead of styling every component manually, define reusable text and component styles.
+```php
+use TomGould\AppleNews\Document\Styles\ComponentTextStyle;
+
+$bodyStyle = (new ComponentTextStyle())
+    ->setFontName('Helvetica')
+    ->setFontSize(18)
+    ->setLineHeight(24)
+    ->setTextColor('#333333');
+
+$article->addComponentTextStyle('defaultBody', $bodyStyle);
+```
+
+#### D. Add Components
+Components represent the content of your article. Roles define their semantic meaning.
+```php
+use TomGould\AppleNews\Document\Components\{Title, Body, Photo, Heading, Divider};
+
+$article
+    ->addComponent(new Title('The Future of Web Development'))
+    ->addComponent(new Divider())
+    ->addComponent(new Heading('Introduction', level: 2))
+    ->addComponent(
+        (new Body('This is the <strong>main</strong> paragraph.'))
+            ->setFormat('html')
+            ->setTextStyle('defaultBody')
+    );
+```
+
+### 4. Working with Assets
+
+#### Bundle Assets (Multipart)
+If you have local images, reference them using `bundle://` URLs. The client will package them as a multipart request automatically.
+
+```php
+use TomGould\AppleNews\Document\Components\Photo;
+
+$article->addComponent(Photo::fromBundle('hero.jpg'));
+
+// When publishing, provide the local path or binary content
+$assets = [
+    'bundle://hero.jpg' => __DIR__ . '/images/hero.jpg'
+];
+```
+
+#### Remote Assets
+You can also use direct HTTPS URLs. These do not need to be included in the publish request.
+```php
+$article->addComponent(Photo::fromUrl('[https://example.com/cdn/remote-image.jpg](https://example.com/cdn/remote-image.jpg)'));
+```
+
+### 5. Publishing to Apple News
+
+Use the client to send your article to a specific channel. You can also provide API-level metadata (like sections) here.
 
 ```php
 try {
@@ -82,17 +157,56 @@ try {
         metadata: [
             'isSponsored' => false,
             'links' => [
-                'sections' => ['[https://news-api.apple.com/sections/section-uuid](https://news-api.apple.com/sections/section-uuid)']
+                'sections' => ['[https://news-api.apple.com/sections/your-section-uuid](https://news-api.apple.com/sections/your-section-uuid)']
             ]
-        ]
+        ],
+        assets: $assets
     );
-    echo "Published! ID: " . $response['data']['id'];
+
+    $articleId = $response['data']['id'];
+    $shareUrl = $response['data']['shareUrl'];
+    echo "Published successfully! Article ID: $articleId";
+
 } catch (\TomGould\AppleNews\Exception\AppleNewsException $e) {
-    echo "Error: " . $e->getMessage();
+    // Handle API errors (Validation, Auth, Quota, etc.)
+    echo "API Error: " . $e->getMessage() . " (" . $e->getErrorCode() . ")";
 }
 ```
 
-## Documentation
+### 6. Updating & Managing Articles
 
-Every class and method is documented via PHPDoc. Refer to the source code or use an IDE like PHPStorm/VS Code for full autocomplete and inline documentation.
+#### Read Information
+```php
+$info = $client->getArticle($articleId);
+$revision = $info['data']['revision']; // Needed for updates
+```
+
+#### Update Content
+Updates require the previous `revision` token to prevent overwriting concurrent changes.
+```php
+$client->updateArticle(
+    articleId: $articleId,
+    revision: $revision,
+    article: $updatedArticle
+);
+```
+
+#### Search
+```php
+$results = $client->searchArticlesInChannel($channelId, [
+    'pageSize' => 5,
+    'sortDir' => 'DESC'
+]);
+```
+
+#### Delete
+```php
+$client->deleteArticle($articleId);
+```
+
+---
+
+## Detailed Documentation
+
+Detailed PHPDoc documentation is available for every class and method in the `src/` directory.
 
