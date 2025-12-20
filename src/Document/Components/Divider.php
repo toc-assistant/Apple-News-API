@@ -11,6 +11,7 @@ namespace TomGould\AppleNews\Document\Components;
  */
 final class Divider extends Component
 {
+    /** @var array{color?: string, width?: int, style?: string}|null */
     private ?array $stroke = null;
 
     public function getRole(): string

@@ -26,10 +26,18 @@ final class ComponentTextStyle implements JsonSerializable
     private ?string $fontStyle = null;
     private ?string $textDecoration = null;
     private ?string $textTransform = null;
+
+    /** @var array<string, mixed>|null */
     private ?array $linkStyle = null;
+
+    /** @var array<string, mixed>|null */
     private ?array $dropCapStyle = null;
+
     private ?string $backgroundColor = null;
+
+    /** @var array<string, mixed>|null */
     private ?array $textShadow = null;
+
     private ?int $paragraphSpacingBefore = null;
     private ?int $paragraphSpacingAfter = null;
     private ?int $firstLineIndent = null;
