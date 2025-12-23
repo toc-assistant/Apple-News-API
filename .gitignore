@@ -10,3 +10,9 @@
 /docs/html/
 /.phpdoc/
 /tools/phpDocumentor.phar
+
+/docs/allDocs.md
+/docs/gap-analysis.md
+
+
+/export.txt
