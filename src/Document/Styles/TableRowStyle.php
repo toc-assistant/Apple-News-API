@@ -90,10 +90,9 @@ final class TableRowStyle implements JsonSerializable
     /**
      * Create a zebra stripe style for alternating rows.
      *
-     * @param string $oddColor  Background for odd rows.
-     * @param string $evenColor Background for even rows.
+     * @param string $color Background color for the row.
      *
-     * @return self A style configured for odd rows (use with selector).
+     * @return self A style configured for striped rows (use with odd/even selector).
      */
     public static function zebraStripe(string $color): self
     {
