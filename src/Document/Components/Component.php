@@ -204,7 +204,7 @@ abstract class Component implements JsonSerializable
      */
     protected function getBaseProperties(): array
     {
-        $data = [];
+        $data = ['role' => $this->getRole()];
 
         if ($this->identifier !== null) {
             $data['identifier'] = $this->identifier;
@@ -248,9 +248,6 @@ abstract class Component implements JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        return array_merge(
-            ['role' => $this->getRole()],
-            $this->getBaseProperties()
-        );
+        return $this->getBaseProperties();
     }
 }
