@@ -4,7 +4,8 @@
  * Logic:
  * 1. Checks if a target .md file exists.
  * 2. If not, checks if it exists as a directory.
- * 3. Redirects broken "classes/Exception" style links to the local directory.
+ * 3. Identifies links to global PHP classes (e.g., Exception, Throwable)
+ * that point to the wrong directory and redirects them to the current folder.
  */
 
 $baseDir = realpath($argv[1] ?? 'docs/markdown');
@@ -18,6 +19,13 @@ $iterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($baseDir, RecursiveDirectoryIterator::SKIP_DOTS)
 );
 
+// Standard PHP classes that phpDocumentor often links incorrectly to the root
+$basePhpClasses = [
+    'Exception', 'JsonException', 'RuntimeException', 'Throwable',
+    'InvalidArgumentException', 'JsonSerializable', 'DateTimeImmutable',
+    'DateTimeInterface', 'DateTime'
+];
+
 foreach ($iterator as $file) {
     if ($file->getExtension() !== 'md') continue;
 
@@ -27,22 +35,22 @@ foreach ($iterator as $file) {
     $originalContent = $content;
 
     // Regex to find Markdown links: [text](url) - ignores external http/https
-    $content = preg_replace_callback('/\]\((?!https?:\/\/)([^)]+)\)/', function($matches) use ($currentFileDir, $baseDir) {
+    $content = preg_replace_callback('/\]\((?!https?:\/\/)([^)]+)\)/', function($matches) use ($currentFileDir, $baseDir, $basePhpClasses) {
         $originalUrl = $matches[1];
 
-        // Remove .md extension for internal checks to standardize
-        $cleanUrl = preg_replace('/\.md$/', '', $originalUrl);
+        // Remove .md extension and any trailing slashes for standardized checks
+        $cleanUrl = preg_replace('/\.md$/', '', rtrim($originalUrl, '/'));
 
         // Step 1: Determine the intended disk path
         if (preg_match('/^(\.\/)?classes\//', $cleanUrl)) {
-            // Path relative to docs root
+            // Path is root-relative (starts with classes/)
             $testPath = $baseDir . DIRECTORY_SEPARATOR . ltrim(preg_replace('/^(\.\/)?classes\//', '', $cleanUrl), '/');
         } else {
-            // Path relative to current file
+            // Path is relative to the current file
             $testPath = $currentFileDir . DIRECTORY_SEPARATOR . ltrim($cleanUrl, '/');
         }
 
-        // Step 2: Test File Presence
+        // Step 2: Test File Presence (with .md extension)
         if (file_exists($testPath . '.md')) {
             return "]($cleanUrl.md)";
         }
@@ -53,22 +61,16 @@ foreach ($iterator as $file) {
         }
 
         /**
-         * Step 4: Special Fix for "Broken Root Links"
-         * Example: Current file is in classes/TomGould/AppleNews/Exception/AppleNewsException.md
-         * Broken link in that file points to: classes/Exception
-         * Logic: We redirect it to the folder containing the current file.
+         * Step 4: Fix Broken Links to Global PHP Classes
+         * If the URL ends with a known base class name and the file doesn't exist at the tested path:
          */
-        if (str_contains($originalUrl, 'classes/')) {
-            $urlParts = explode('/', rtrim($cleanUrl, '/'));
-            $targetName = end($urlParts);
+        $urlParts = explode('/', $cleanUrl);
+        $targetName = end($urlParts);
 
-            // Fixed variable name from previous error
-            $basePhpClasses = ['Exception', 'JsonException', 'RuntimeException', 'Throwable', 'InvalidArgumentException', 'JsonSerializable', 'DateTimeImmutable', 'DateTimeInterface'];
-
-            if (in_array($targetName, $basePhpClasses)) {
-                // Determine relative path back to the current folder
-                return "](./)";
-            }
+        if (in_array($targetName, $basePhpClasses)) {
+            // Force the link to point to the current directory where the class file resides.
+            // On GitHub, this will reload the current folder view or stay on page if it's a self-reference.
+            return "](./)";
         }
 
         return $matches[0];
