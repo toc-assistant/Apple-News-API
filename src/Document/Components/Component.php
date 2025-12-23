@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 use JsonSerializable;
+use TomGould\AppleNews\Document\Behaviors\BehaviorInterface;
 
 /**
  * Base class for all Apple News Format (ANF) components.
@@ -42,13 +43,16 @@ abstract class Component implements JsonSerializable
 
     /**
      * Get the role name for the component (e.g., 'body', 'photo', 'heading1').
+     *
      * @return string
      */
     abstract public function getRole(): string;
 
     /**
      * Set a unique identifier for this component.
-     * @param string $identifier
+     *
+     * @param string $identifier The unique identifier.
+     *
      * @return static
      */
     public function setIdentifier(string $identifier): static
@@ -59,7 +63,9 @@ abstract class Component implements JsonSerializable
 
     /**
      * Set the layout name or inline layout.
+     *
      * @param string $layout Reference to a name in componentLayouts.
+     *
      * @return static
      */
     public function setLayout(string $layout): static
@@ -70,7 +76,9 @@ abstract class Component implements JsonSerializable
 
     /**
      * Set the style name.
+     *
      * @param string $style Reference to a name in componentStyles.
+     *
      * @return static
      */
     public function setStyle(string $style): static
@@ -81,7 +89,9 @@ abstract class Component implements JsonSerializable
 
     /**
      * Set the anchor configuration.
-     * @param string $anchor
+     *
+     * @param string $anchor The anchor configuration.
+     *
      * @return static
      */
     public function setAnchor(string $anchor): static
@@ -94,7 +104,9 @@ abstract class Component implements JsonSerializable
      * Set component animation.
      *
      * @param array<string, mixed> $animation Animation properties.
+     *
      * @return static
+     *
      * @see https://developer.apple.com/documentation/applenewsformat/fadeinanimation
      */
     public function setAnimation(array $animation): static
@@ -104,10 +116,12 @@ abstract class Component implements JsonSerializable
     }
 
     /**
-     * Set component behavior.
+     * Set the component behavior using an array.
      *
-     * @param array<string, mixed> $behavior Behavior properties (e.g., parallax).
+     * @param array<string, mixed> $behavior The behavior configuration array.
+     *
      * @return static
+     *
      * @see https://developer.apple.com/documentation/applenewsformat/parallax
      */
     public function setBehavior(array $behavior): static
@@ -117,8 +131,29 @@ abstract class Component implements JsonSerializable
     }
 
     /**
+     * Set the component behavior using a typed Behavior object.
+     *
+     * This method provides type-safe behavior configuration:
+     * ```php
+     * $photo->setBehaviorObject(Parallax::withFactor(0.8));
+     * $photo->setBehaviorObject(new Springy());
+     * ```
+     *
+     * @param BehaviorInterface $behavior The behavior object.
+     *
+     * @return static
+     */
+    public function setBehaviorObject(BehaviorInterface $behavior): static
+    {
+        $this->behavior = $behavior->jsonSerialize();
+        return $this;
+    }
+
+    /**
      * Set whether the component is hidden.
-     * @param bool $hidden
+     *
+     * @param bool $hidden Whether to hide the component.
+     *
      * @return static
      */
     public function setHidden(bool $hidden): static
@@ -131,7 +166,9 @@ abstract class Component implements JsonSerializable
      * Set conditional properties for the component.
      *
      * @param array<string, mixed> $conditional Array of conditions.
+     *
      * @return static
+     *
      * @see https://developer.apple.com/documentation/applenewsformat/condition
      */
     public function setConditional(array $conditional): static
@@ -147,7 +184,7 @@ abstract class Component implements JsonSerializable
      */
     protected function getBaseProperties(): array
     {
-        $data = ['role' => $this->getRole()];
+        $data = [];
 
         if ($this->identifier !== null) {
             $data['identifier'] = $this->identifier;
@@ -186,10 +223,14 @@ abstract class Component implements JsonSerializable
 
     /**
      * Implementation of JsonSerializable.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array
     {
-        return $this->getBaseProperties();
+        return array_merge(
+            ['role' => $this->getRole()],
+            $this->getBaseProperties()
+        );
     }
 }
