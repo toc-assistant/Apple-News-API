@@ -89,6 +89,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced `Container` component with `setContentDisplayObject()` method
 - All conditional classes implement `ConditionalInterface`
 
+## [1.0.8] - 2025-12-23
+
+### Fixed
+- Internal links in Markdown documentation for GitHub
+
+## [1.0.7] - 2025-12-23
+
+### Added
+- New Markdown documentation for GitHub
+
+## [1.0.6] - 2025-12-23
+
+### Changed
+- Updated changelog and README
+
+### Fixed
+- Test fixes
+
 ## [1.0.5] - 2025-12-23
 
 ### Added
