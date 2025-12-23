@@ -82,7 +82,7 @@ Returns the header value and the date string used.
 **Throws:**
 
 if the secret key cannot be decoded.
-- [`InvalidArgumentException`](../../../InvalidArgumentException)
+- [`InvalidArgumentException`](../../../InvalidArgumentException.md)
 
 ***
 
@@ -130,7 +130,7 @@ Base64 encoded signature.
 **Throws:**
 
 if the secret is not valid Base64.
-- [`InvalidArgumentException`](../../../InvalidArgumentException)
+- [`InvalidArgumentException`](../../../InvalidArgumentException.md)
 
 ***
 

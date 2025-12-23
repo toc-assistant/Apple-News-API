@@ -7,7 +7,7 @@ provides access to specific API error codes and key paths (field names).
 ***
 
 * Full name: `\TomGould\AppleNews\Exception\AppleNewsException`
-* Parent class: [`Exception`](../../../Exception)
+* Parent class: [`Exception`](../../../Exception.md)
 
 ## Properties
 

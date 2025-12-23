@@ -105,7 +105,7 @@ public addMetadata(array<string,mixed> $metadata): self
 
 **Throws:**
 
-- [`JsonException`](../../../JsonException)
+- [`JsonException`](../../../JsonException.md)
 
 ***
 
@@ -127,9 +127,9 @@ public addImageFile(string $name, string $filePath): self
 **Throws:**
 
 if file doesn't exist.
-- [`InvalidArgumentException`](../../../InvalidArgumentException)
+- [`InvalidArgumentException`](../../../InvalidArgumentException.md)
 if file cannot be read.
-- [`RuntimeException`](../../../RuntimeException)
+- [`RuntimeException`](../../../RuntimeException.md)
 
 ***
 
