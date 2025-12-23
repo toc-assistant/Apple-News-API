@@ -1,11 +1,10 @@
 <?php
 /**
- * Advanced Markdown Link Fixer
+ * Advanced Markdown Link & Path Fixer
  * Logic:
- * 1. Identify relative links in Markdown.
- * 2. Check if the target exists as a .md file.
- * 3. If not, check if it exists as a directory.
- * 4. Update the link accordingly to ensure it works on GitHub.
+ * 1. Checks if a target .md file exists.
+ * 2. If not, checks if it exists as a directory.
+ * 3. Redirects broken "classes/Exception" style links to the local directory.
  */
 
 $baseDir = realpath($argv[1] ?? 'docs/markdown');
@@ -23,45 +22,53 @@ foreach ($iterator as $file) {
     if ($file->getExtension() !== 'md') continue;
 
     $filePath = $file->getPathname();
-    $currentDir = dirname($filePath);
+    $currentFileDir = dirname($filePath);
     $content = file_get_contents($filePath);
     $originalContent = $content;
 
-    // Regex to find Markdown links: [text](url)
-    // Excludes external URLs (http/https)
-    $content = preg_replace_callback('/\]\((?!https?:\/\/)([^)]+)\)/', function($matches) use ($currentDir, $baseDir) {
+    // Regex to find Markdown links: [text](url) - ignores external http/https
+    $content = preg_replace_callback('/\]\((?!https?:\/\/)([^)]+)\)/', function($matches) use ($currentFileDir, $baseDir) {
         $originalUrl = $matches[1];
 
-        // Remove any existing .md to standardize the search
+        // Remove .md extension for internal checks to standardize
         $cleanUrl = preg_replace('/\.md$/', '', $originalUrl);
 
-        // Determine the absolute path on disk for the link target
-        // If it starts with 'classes/', it's relative to the baseDir, otherwise relative to currentDir
-        if (str_starts_with($cleanUrl, 'classes/')) {
-            $testPath = $baseDir . DIRECTORY_SEPARATOR . ltrim($cleanUrl, '/');
+        // Step 1: Determine the intended disk path
+        if (preg_match('/^(\.\/)?classes\//', $cleanUrl)) {
+            // Path relative to docs root
+            $testPath = $baseDir . DIRECTORY_SEPARATOR . ltrim(preg_replace('/^(\.\/)?classes\//', '', $cleanUrl), '/');
         } else {
-            $testPath = $currentDir . DIRECTORY_SEPARATOR . ltrim($cleanUrl, '/');
+            // Path relative to current file
+            $testPath = $currentFileDir . DIRECTORY_SEPARATOR . ltrim($cleanUrl, '/');
         }
 
-        $realPath = realpath($testPath);
-
-        // Case 1: The target exists exactly as a .md file
+        // Step 2: Test File Presence
         if (file_exists($testPath . '.md')) {
             return "]($cleanUrl.md)";
         }
 
-        // Case 2: The target is a directory (GitHub handles this as a folder view)
+        // Step 3: Test Directory Presence
         if (is_dir($testPath)) {
             return "]($cleanUrl/)";
         }
 
-        // Case 3: Handle the phpDocumentor "best guess" root links (like classes/Exception)
-        // If it points to root/classes/Exception and it doesn't exist,
-        // link to the directory of the current file instead.
-        if (str_contains($cleanUrl, 'classes/') && !file_exists($testPath)) {
-            $parts = explode('/', $cleanUrl);
-            $className = end($parts);
-            return "]($className)"; // Falls back to current directory link
+        /**
+         * Step 4: Special Fix for "Broken Root Links"
+         * Example: Current file is in classes/TomGould/AppleNews/Exception/AppleNewsException.md
+         * Broken link in that file points to: classes/Exception
+         * Logic: We redirect it to the folder containing the current file.
+         */
+        if (str_contains($originalUrl, 'classes/')) {
+            $urlParts = explode('/', rtrim($cleanUrl, '/'));
+            $targetName = end($urlParts);
+
+            // Fixed variable name from previous error
+            $basePhpClasses = ['Exception', 'JsonException', 'RuntimeException', 'Throwable', 'InvalidArgumentException', 'JsonSerializable', 'DateTimeImmutable', 'DateTimeInterface'];
+
+            if (in_array($targetName, $basePhpClasses)) {
+                // Determine relative path back to the current folder
+                return "](./)";
+            }
         }
 
         return $matches[0];
@@ -69,8 +76,8 @@ foreach ($iterator as $file) {
 
     if ($content !== $originalContent) {
         file_put_contents($filePath, $content);
-        echo "Validated links in: " . str_replace($baseDir, '', $filePath) . "\n";
+        echo "Fixed paths in: " . str_replace($baseDir, '', $filePath) . "\n";
     }
 }
 
-echo "Link validation complete!\n";
+echo "Path fixing complete!\n";
