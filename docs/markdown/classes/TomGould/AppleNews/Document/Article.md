@@ -356,7 +356,7 @@ public toJson(int $flags = \TomGould\AppleNews\Document\JSON_PRETTY_PRINT | \Tom
 **Throws:**
 
 if serialization fails.
-- [`JsonException`](../../../JsonException.md)
+- [`JsonException`](JsonException.md)
 
 ***
 

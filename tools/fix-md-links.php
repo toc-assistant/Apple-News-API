@@ -1,6 +1,6 @@
 <?php
 /**
- * Fix markdown links missing .md extension
+ * Fix markdown links missing .md extension and incorrect directory paths.
  */
 $dir = $argv[1] ?? 'docs/markdown';
 
@@ -22,13 +22,8 @@ foreach ($iterator as $file) {
     $original = $content;
 
     /**
-     * Improved Regex Explanation:
-     * 1. \] \(              : Match the end of a markdown link text and start of URL
-     * 2. ( (?!\w+:\/\/)     : Negative lookahead to ensure it's NOT an external URL (http:// etc)
-     * 3. (?: \.\.\/ | \.\/ | classes\/ )+ : Match relative steps (../), current steps (./), or the classes root
-     * 4. [^)\s.]+           : Match the path characters (excluding dots and spaces to avoid files with extensions)
-     * 5. (?<!\.md)          : Negative lookbehind to ensure we don't double up if .md already exists
-     * 6. \)                 : Match closing parenthesis
+     * FIX 1: Add .md extension to local paths that don't have one.
+     * This targets links like [Text](../Path/ClassName) but ignores external URLs.
      */
     $content = preg_replace(
         '/\]\(((?!\w+:\/\/)(?:(?:\.\.\/)+|(?:\.\/)+|classes\/)[^)\s.]+)(?<!\.md)\)/i',
@@ -36,8 +31,33 @@ foreach ($iterator as $file) {
         $content
     );
 
-    // Specifically handle ClassName links that have no path prefix but are relative in MD
-    // e.g. [LinkAddition](LinkAddition) -> [LinkAddition](LinkAddition.md)
+    /**
+     * FIX 2: Correct links to base PHP classes (like Exception)
+     * If a link points to ../../../Exception.md, it's often broken.
+     * This logic detects "Parent class" or "Throws" links pointing to root classes
+     * and ensures they are reachable or correctly formatted.
+     */
+    $content = preg_replace_callback('/\]\(((\.\.\/)+)([^)]+\.md)\)/', function($matches) {
+        $pathPrefix = $matches[1];
+        $fileName = $matches[3];
+
+        // List of common base PHP classes that often get broken root links
+        $baseClasses = ['Exception.md', 'JsonException.md', 'RuntimeException.md', 'InvalidArgumentException.md', 'Throwable.md'];
+
+        if (in_array($fileName, $baseClasses)) {
+            // Option A: Keep them relative but ensure they don't break.
+            // In many cases, these files don't actually exist in your MD export.
+            // If you want to link back to the class itself if the file is missing:
+            return "]($fileName)";
+        }
+
+        return $matches[0];
+    }, $content);
+
+    /**
+     * FIX 3: Specific ClassName-only links
+     * e.g. [LinkAddition](LinkAddition) -> [LinkAddition](LinkAddition.md)
+     */
     $content = preg_replace(
         '/\]\(([A-Z][a-zA-Z0-9_]*)(?<!\.md)\)/',
         ']($1.md)',
@@ -46,8 +66,8 @@ foreach ($iterator as $file) {
 
     if ($content !== $original) {
         file_put_contents($file->getPathname(), $content);
-        echo "Fixed: {$file->getPathname()}\n";
+        echo "Fixed links in: {$file->getPathname()}\n";
     }
 }
 
-echo "Done!\n";
+echo "Done fixing documentation links!\n";
