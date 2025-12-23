@@ -434,7 +434,6 @@ try {
 ---
 
 ## Generating Documentation
-## Generating Documentation
 
 Generate a local API reference:
 ```bash
