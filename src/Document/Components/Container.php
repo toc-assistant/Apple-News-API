@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TomGould\AppleNews\Document\Components;
 
+use TomGould\AppleNews\Document\Layouts\ContentDisplayInterface;
+
 /**
  * A container component used to group other components together.
  *
@@ -17,8 +19,8 @@ class Container extends Component
     /** @var array<Component> Child components. */
     protected array $components = [];
 
-    /** @var string|null Layout mode for child components. */
-    protected ?string $contentDisplay = null;
+    /** @var string|array<string, mixed>|null Layout mode for child components. */
+    protected string|array|null $contentDisplay = null;
 
     public function getRole(): string
     {
@@ -37,13 +39,34 @@ class Container extends Component
     }
 
     /**
-     * Set the content display mode (e.g., for horizontal scrolling).
-     * @param string $contentDisplay
-     * @return self
+     * Set the content display mode using a string or array.
+     *
+     * @param string|array<string, mixed> $contentDisplay The display mode or configuration.
+     *
+     * @return $this
      */
-    public function setContentDisplay(string $contentDisplay): self
+    public function setContentDisplay(string|array $contentDisplay): self
     {
         $this->contentDisplay = $contentDisplay;
+        return $this;
+    }
+
+    /**
+     * Set the content display mode using a typed ContentDisplay object.
+     *
+     * This method provides type-safe content display configuration:
+     * ```php
+     * $container->setContentDisplayObject(new HorizontalStackDisplay());
+     * $container->setContentDisplayObject(CollectionDisplay::grid(20, 20));
+     * ```
+     *
+     * @param ContentDisplayInterface $contentDisplay The content display object.
+     *
+     * @return $this
+     */
+    public function setContentDisplayObject(ContentDisplayInterface $contentDisplay): self
+    {
+        $this->contentDisplay = $contentDisplay->jsonSerialize();
         return $this;
     }
 
