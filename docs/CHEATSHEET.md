@@ -48,6 +48,11 @@ $article->setMetadata(
         ->setThumbnailURL('https://example.com/thumb.jpg')
         ->setContentGenerationType('none')  // 'none' or 'AI'
         ->setTransparentToolbar(true)       // For immersive headers
+        ->setIssueFromArray([               // For magazines/periodicals
+            'issueIdentifier' => 'issue-2024-01',
+            'issueDate' => '2024-01-15',
+            'issueName' => 'January 2024'
+        ])
 );
 ```
 
@@ -79,10 +84,16 @@ Photo::fromUrl('https://...');
 Photo::fromBundle('image.jpg');
 Photo::fromUrl('...')->setCaption('...')->setAccessibilityCaption('...');
 
+Image::fromUrl('https://...');        // Generic image
 (new Figure())->setUrl('...')->setCaption('...');
+Portrait::fromUrl('https://...');     // Portrait orientation
+Logo::fromUrl('https://...');         // Publication logo
 (new Video())->setUrl('...');
 (new Audio())->setUrl('...');
 (new Gallery())->addItem($figure1)->addItem($figure2);
+(new Mosaic())->addItem($figure1);    // Mosaic layout
+new Music();                          // Apple Music embed
+new Podcast();                        // Podcast episode
 ARKit::fromUrl('https://example.com/model.usdz');
 ```
 
@@ -114,10 +125,12 @@ new FlexibleSpacer();  // Flexible spacing
 new LinkButton('Click Here', 'https://...');
 new ArticleLink::fromArticleId('article-id');
 new Map(latitude: 51.5074, longitude: -0.1278);
+new Place(latitude: 51.5074, longitude: -0.1278, caption: 'London');
 new DataTable();
 new HTMLTable('<table>...</table>');
 new BannerAdvertisement();
 new MediumRectangleAdvertisement();
+new ReplicaAdvertisement();           // Print replica ad
 ```
 
 ---
@@ -152,6 +165,16 @@ $style->setDropCapStyle([
     'numberOfCharacters' => 1,
     'fontName' => 'Georgia-Bold',
     'textColor' => '#007AFF'
+]);
+```
+
+### Inline Text Styles
+
+```php
+// Style portions of text within a component
+$body->setInlineTextStyles([
+    ['rangeStart' => 0, 'rangeLength' => 5, 'textStyle' => 'bold-style'],
+    ['rangeStart' => 10, 'rangeLength' => 8, 'textStyle' => 'link-style']
 ]);
 ```
 
@@ -221,14 +244,18 @@ $container->setStyle([
 use TomGould\AppleNews\Document\Animations\*;
 use TomGould\AppleNews\Document\Behaviors\*;
 
-// Animations
-$component->setAnimationObject(FadeInAnimation::standard());
-$component->setAnimationObject(MoveInAnimation::fromLeft());
-$component->setAnimationObject(ScaleFadeAnimation::subtle());
+// Animations (all from Apple News Format)
+$component->setAnimationObject(AppearAnimation::create());      // Generic appear
+$component->setAnimationObject(FadeInAnimation::standard());    // Fade in
+$component->setAnimationObject(MoveInAnimation::fromLeft());    // Move from direction
+$component->setAnimationObject(ScaleFadeAnimation::subtle());   // Scale + fade
 
-// Behaviors
-$component->setBehaviorObject(Parallax::withFactor(0.5));
-$component->setBehaviorObject(Springy::create());
+// Behaviors (all from Apple News Format)
+$component->setBehaviorObject(Parallax::withFactor(0.5));       // Parallax scroll
+$component->setBehaviorObject(BackgroundParallax::withFactor(0.8));
+$component->setBehaviorObject(Springy::create());               // Spring physics
+$component->setBehaviorObject(Motion::create());                // Gyroscope
+$component->setBehaviorObject(BackgroundMotion::create());      // Gyro for backgrounds
 
 // Header scenes
 use TomGould\AppleNews\Document\Scenes\*;
