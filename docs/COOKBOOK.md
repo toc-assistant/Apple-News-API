@@ -305,19 +305,20 @@ $article->addComponent(
 
 ### Media Components
 
-| Component | Factory Methods |
-|-----------|-----------------|
-| `Photo` | `fromUrl()`, `fromBundle()` |
-| `Figure` | `fromUrl()`, `fromBundle()` |
-| `Portrait` | - |
-| `Logo` | - |
-| `Gallery` | `addItem()` |
-| `Mosaic` | - |
-| `Video` | `fromUrl()`, `fromBundle()` |
-| `Audio` | `fromUrl()`, `fromBundle()` |
-| `Music` | - |
-| `Podcast` | - |
-| `ARKit` | `fromUrl()`, `fromBundle()` |
+| Component | Factory Methods | Notes |
+|-----------|-----------------|-------|
+| `Photo` | `fromUrl()`, `fromBundle()` | Single image |
+| `Image` | `fromUrl()`, `fromBundle()` | Generic image (alias) |
+| `Figure` | `fromUrl()`, `fromBundle()` | Image with caption |
+| `Portrait` | `fromUrl()`, `fromBundle()` | Portrait-oriented image |
+| `Logo` | `fromUrl()`, `fromBundle()` | Publication logo |
+| `Gallery` | `addItem()` | Horizontal image gallery |
+| `Mosaic` | `addItem()` | Mosaic image layout |
+| `Video` | `fromUrl()`, `fromBundle()` | Native video player |
+| `Audio` | `fromUrl()`, `fromBundle()` | Audio player |
+| `Music` | - | Apple Music integration |
+| `Podcast` | - | Podcast episode embed |
+| `ARKit` | `fromUrl()`, `fromBundle()` | AR Quick Look 3D models |
 
 ### Social Embeds
 
@@ -343,15 +344,17 @@ $article->addComponent(
 
 ### Data & Interactive
 
-| Component | Key Methods |
-|-----------|-------------|
-| `DataTable` | `setData()`, `setSortBy()` |
-| `HTMLTable` | `fromHtml()` |
-| `Map` | constructor(lat, lng) |
-| `LinkButton` | constructor(text, url) |
-| `ArticleLink` | `fromArticleId()` |
-| `BannerAdvertisement` | - |
-| `MediumRectangleAdvertisement` | - |
+| Component | Key Methods | Notes |
+|-----------|-------------|-------|
+| `DataTable` | `setData()`, `setSortBy()` | Interactive sortable table |
+| `HTMLTable` | `fromHtml()` | HTML-based table |
+| `Map` | constructor(lat, lng) | Interactive Apple Maps |
+| `Place` | constructor(lat, lng, caption) | Location marker for Map |
+| `LinkButton` | constructor(text, url) | Call-to-action button |
+| `ArticleLink` | `fromArticleId()` | Link to another article |
+| `BannerAdvertisement` | - | Banner ad slot |
+| `MediumRectangleAdvertisement` | - | MREC ad slot (300x250) |
+| `ReplicaAdvertisement` | - | Print replica ad slot |
 
 ---
 
@@ -474,6 +477,36 @@ $titleStyle = (new ComponentTextStyle())
     ]);
 ```
 
+### Inline Text Styles
+
+Apply different styles to portions of text within a component:
+
+```php
+// Define styles for different text ranges
+$body = new Body('Welcome to our exclusive report on the latest developments.');
+
+$body->setInlineTextStyles([
+    [
+        'rangeStart' => 0,
+        'rangeLength' => 7,  // "Welcome"
+        'textStyle' => 'bold-style'
+    ],
+    [
+        'rangeStart' => 15,
+        'rangeLength' => 9,  // "exclusive"
+        'textStyle' => 'emphasis-style'
+    ]
+]);
+
+// Register the styles first
+$article->addComponentTextStyle('bold-style', 
+    (new ComponentTextStyle())->setFontWeight('bold')
+);
+$article->addComponentTextStyle('emphasis-style',
+    (new ComponentTextStyle())->setFontStyle('italic')->setTextColor('#007AFF')
+);
+```
+
 ---
 
 ## Dark Mode Support
@@ -566,25 +599,49 @@ $videoFill = (new VideoFill('https://example.com/bg-video.mp4'))
 
 ### Animations
 
+All animations from Apple News Format are supported:
+
 ```php
 use TomGould\AppleNews\Document\Animations\*;
 
+// Appear animation (generic)
+$component->setAnimationObject(AppearAnimation::create());
+
+// Fade in animation
 $component->setAnimationObject(FadeInAnimation::standard());
+$component->setAnimationObject(FadeInAnimation::fromTransparent());
+$component->setAnimationObject(FadeInAnimation::withDelay(0.3));
+
+// Move in animation
 $component->setAnimationObject(MoveInAnimation::fromLeft());
 $component->setAnimationObject(MoveInAnimation::fromRight());
+$component->setAnimationObject(MoveInAnimation::fromBottom());
+
+// Scale fade animation
 $component->setAnimationObject(ScaleFadeAnimation::subtle());
-$component->setAnimationObject(FadeInAnimation::withDelay(0.3));
 ```
 
 ### Behaviors
 
+All behaviors from Apple News Format are supported:
+
 ```php
 use TomGould\AppleNews\Document\Behaviors\*;
 
-$photo->setBehaviorObject(Parallax::withFactor(0.5));
+// Parallax scrolling
+$photo->setBehaviorObject(Parallax::withFactor(0.5));  // 0-1 factor
+
+// Background parallax (for fills)
 $header->setBehaviorObject(BackgroundParallax::withFactor(0.8));
+
+// Spring physics
 $component->setBehaviorObject(Springy::create());
+
+// Motion (gyroscope-based movement)
 $component->setBehaviorObject(Motion::create());
+
+// Background motion (gyroscope for backgrounds)
+$component->setBehaviorObject(BackgroundMotion::create());
 ```
 
 ### Scenes (Header Effects)
@@ -629,6 +686,44 @@ $article->setAutoplacement([
     'advertisement' => $autoPlacement->jsonSerialize()
 ]);
 ```
+
+---
+
+## Magazine/Periodical Metadata
+
+For magazine and periodical publishers, use the `Issue` class to associate articles with specific issues:
+
+```php
+use TomGould\AppleNews\Document\Issue;
+
+$article->setMetadata(
+    (new Metadata())
+        ->addAuthor('Editorial Team')
+        ->setExcerpt('Cover story for our January issue')
+        ->setDatePublished(new DateTime('2024-01-15'))
+        ->setIssue(
+            (new Issue())
+                ->setIssueIdentifier('issue-2024-01')
+                ->setIssueDate('2024-01-15')
+                ->setIssueName('January 2024')
+        )
+);
+
+// Or using array syntax
+$article->setMetadata(
+    (new Metadata())
+        ->setIssueFromArray([
+            'issueIdentifier' => 'issue-2024-01',
+            'issueDate' => '2024-01-15',
+            'issueName' => 'January 2024'
+        ])
+);
+```
+
+This enables:
+- Issue-based navigation in Apple News
+- Grouping of articles by issue
+- Historical archive browsing
 
 ---
 
