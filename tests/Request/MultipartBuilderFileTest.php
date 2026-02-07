@@ -74,6 +74,18 @@ final class MultipartBuilderFileTest extends TestCase
 
     public function testAddImageFileWithUnknownExtension(): void
     {
+        $filePath = $this->tempDir . '/image.xyz';
+        file_put_contents($filePath, 'fake-content');
+
+        $builder = new MultipartBuilder('test-boundary');
+        $builder->addImageFile('unknown', $filePath);
+        $body = $builder->build();
+
+        $this->assertStringContainsString('Content-Type: application/octet-stream', $body);
+    }
+
+    public function testAddImageFileWithWebpExtension(): void
+    {
         $filePath = $this->tempDir . '/image.webp';
         file_put_contents($filePath, 'fake-webp-content');
 
@@ -81,7 +93,7 @@ final class MultipartBuilderFileTest extends TestCase
         $builder->addImageFile('webp', $filePath);
         $body = $builder->build();
 
-        $this->assertStringContainsString('Content-Type: application/octet-stream', $body);
+        $this->assertStringContainsString('Content-Type: image/webp', $body);
     }
 
     public function testAddImageFileWithUppercaseExtension(): void
