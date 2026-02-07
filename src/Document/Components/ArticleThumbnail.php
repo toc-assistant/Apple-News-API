@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace TomGould\AppleNews\Document\Components;
 
 /**
- * Logo component for brand or publication logos.
+ * Article thumbnail component for custom feed images.
  *
- * The logo component displays a brand logo or publication mark.
+ * The article_thumbnail component allows you to specify a custom image
+ * that appears in article feeds and tiles, separate from the main article content.
  *
- * @see https://developer.apple.com/documentation/apple_news/logo
+ * @see https://developer.apple.com/documentation/applenewsformat/articlethumbnail
  */
-final class Logo extends Component
+final class ArticleThumbnail extends Component
 {
     /**
-     * The caption for the logo.
+     * The caption for the thumbnail.
      */
     private ?string $caption = null;
 
@@ -29,9 +30,9 @@ final class Logo extends Component
     private ?bool $explicitContent = null;
 
     /**
-     * Create a new Logo component.
+     * Create a new ArticleThumbnail component.
      *
-     * @param string $url The URL to the logo image file.
+     * @param string $url The URL to the thumbnail image file.
      */
     public function __construct(
         private readonly string $url
@@ -39,11 +40,11 @@ final class Logo extends Component
     }
 
     /**
-     * Create a Logo from a URL.
+     * Create an ArticleThumbnail from a URL.
      *
-     * @param string $url The logo URL.
+     * @param string $url The image URL.
      *
-     * @return self A new Logo instance.
+     * @return self A new ArticleThumbnail instance.
      */
     public static function fromUrl(string $url): self
     {
@@ -51,11 +52,11 @@ final class Logo extends Component
     }
 
     /**
-     * Create a Logo from a bundle file reference.
+     * Create an ArticleThumbnail from a bundle file reference.
      *
      * @param string $filename The filename in the article bundle.
      *
-     * @return self A new Logo instance.
+     * @return self A new ArticleThumbnail instance.
      */
     public static function fromBundle(string $filename): self
     {
@@ -67,11 +68,11 @@ final class Logo extends Component
      */
     public function getRole(): string
     {
-        return 'logo';
+        return 'article_thumbnail';
     }
 
     /**
-     * Set the logo caption.
+     * Set the thumbnail caption.
      *
      * @param string $caption The caption text.
      *
@@ -116,11 +117,8 @@ final class Logo extends Component
      */
     public function jsonSerialize(): array
     {
-        $data = array_merge(
-            ['role' => $this->getRole()],
-            $this->getBaseProperties(),
-            ['URL' => $this->url]
-        );
+        $data = $this->getBaseProperties();
+        $data['URL'] = $this->url;
 
         if ($this->caption !== null) {
             $data['caption'] = $this->caption;
@@ -137,4 +135,3 @@ final class Logo extends Component
         return $data;
     }
 }
-

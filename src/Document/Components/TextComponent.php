@@ -20,6 +20,9 @@ abstract class TextComponent extends Component
     /** @var string|null The text format (none, html, markdown). */
     protected ?string $format = null;
 
+    /** @var array<array<string, mixed>>|null Additions (links) applied to text ranges. */
+    protected ?array $additions = null;
+
     /**
      * @param string $text The raw text content.
      */
@@ -62,6 +65,22 @@ abstract class TextComponent extends Component
     }
 
     /**
+     * Set additions (link ranges) for the text component.
+     *
+     * Additions allow you to apply links to specific ranges of text.
+     * Note: Additions are not supported when format is 'html' or 'markdown'.
+     *
+     * @param array<array<string, mixed>> $additions Array of addition objects with rangeStart, rangeLength, and link.
+     * @return static
+     * @see https://developer.apple.com/documentation/applenewsformat/addition
+     */
+    public function setAdditions(array $additions): static
+    {
+        $this->additions = $additions;
+        return $this;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array
@@ -79,6 +98,10 @@ abstract class TextComponent extends Component
 
         if ($this->format !== null) {
             $data['format'] = $this->format;
+        }
+
+        if ($this->additions !== null) {
+            $data['additions'] = $this->additions;
         }
 
         return $data;
