@@ -1,259 +1,520 @@
 # Apple News API Cookbook
 
-Advanced patterns, real-world recipes, and edge case handling for the Apple News API PHP client.
+Advanced patterns, real-world recipes, and production-ready examples for the Apple News API PHP client.
 
 ---
 
 ## Table of Contents
 
-1. [Complex Layouts](#complex-layouts)
-2. [Nested Containers](#nested-containers)
-3. [Data Tables](#data-tables)
-4. [Dark Mode Support](#dark-mode-support)
-5. [Advertising Integration](#advertising-integration)
-6. [Real-World Article Templates](#real-world-article-templates)
-7. [Performance Optimization](#performance-optimization)
-8. [Common Pitfalls](#common-pitfalls)
-9. [Debugging Tips](#debugging-tips)
-10. [Migration Guide](#migration-guide)
+1. [Complete Article Examples](#complete-article-examples)
+2. [Component Reference](#component-reference)
+3. [Layouts & Containers](#layouts--containers)
+4. [Styling & Themes](#styling--themes)
+5. [Dark Mode Support](#dark-mode-support)
+6. [Background Fills](#background-fills)
+7. [Animations & Behaviors](#animations--behaviors)
+8. [Advertising Integration](#advertising-integration)
+9. [API Operations](#api-operations)
+10. [Production Patterns](#production-patterns)
+11. [Common Pitfalls](#common-pitfalls)
+12. [Debugging & Validation](#debugging--validation)
 
 ---
 
-## Complex Layouts
+## Complete Article Examples
 
-### Horizontal Stack (Side-by-Side Content)
+### Basic News Article
 
 ```php
-use TomGould\AppleNews\Document\Components\Container;
-use TomGould\AppleNews\Document\Components\Body;
-use TomGould\AppleNews\Document\Components\Photo;
+<?php
+
+use TomGould\AppleNews\Client\AppleNewsClient;
+use TomGould\AppleNews\Document\Article;
+use TomGould\AppleNews\Document\Metadata;
+use TomGould\AppleNews\Document\Components\{Title, Body, Photo, Byline, Heading, Divider};
+use TomGould\AppleNews\Document\Styles\ComponentTextStyle;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
+
+// 1. Create client
+$factory = new HttpFactory();
+$client = AppleNewsClient::create(
+    keyId: $_ENV['APPLE_NEWS_KEY_ID'],
+    keySecret: $_ENV['APPLE_NEWS_KEY_SECRET'],
+    httpClient: new Client(['timeout' => 30]),
+    requestFactory: $factory,
+    streamFactory: $factory
+);
+
+// 2. Build article with standard 7-column layout
+$article = Article::create(
+    identifier: 'article-' . uniqid(),
+    title: 'Breaking: Major Discovery Announced',
+    language: 'en',
+    columns: 7,
+    width: 1024
+);
+
+// 3. Define reusable text styles
+$bodyStyle = (new ComponentTextStyle())
+    ->setFontName('Georgia')
+    ->setFontSize(18)
+    ->setLineHeight(28)
+    ->setTextColor('#1a1a1a');
+
+$headingStyle = (new ComponentTextStyle())
+    ->setFontName('HelveticaNeue-Bold')
+    ->setFontSize(32)
+    ->setLineHeight(38)
+    ->setTextColor('#000000');
+
+$article->addComponentTextStyle('body-default', $bodyStyle);
+$article->addComponentTextStyle('heading-default', $headingStyle);
+
+// 4. Set metadata (required for proper indexing)
+$article->setMetadata(
+    (new Metadata())
+        ->addAuthor('Jane Smith')
+        ->addAuthor('John Doe')
+        ->setExcerpt('Scientists announce a groundbreaking discovery.')
+        ->setDatePublished(new DateTime())
+        ->setDateCreated(new DateTime('-1 hour'))
+        ->setCanonicalURL('https://example.com/articles/major-discovery')
+        ->addKeywords(['science', 'discovery', 'breaking news'])
+        ->setThumbnailURL('https://example.com/images/hero-thumb.jpg')
+        ->setGeneratorName('MyPublisher')
+        ->setGeneratorVersion('2.0')
+        ->setContentGenerationType('none')
+);
+
+// 5. Build article content
+$article->addComponent(new Title('Breaking: Major Discovery Announced'));
+
+$article->addComponent(
+    Photo::fromUrl('https://example.com/images/hero.jpg')
+        ->setCaption('Scientists at the research facility')
+        ->setAccessibilityCaption('Group of scientists examining equipment')
+);
+
+$article->addComponent(new Byline('By Jane Smith and John Doe | ' . date('F j, Y')));
+$article->addComponent(new Divider());
+
+$article->addComponent(
+    (new Body('In a stunning announcement today, researchers revealed findings that could revolutionize our understanding.'))
+        ->setTextStyle('body-default')
+);
+
+$article->addComponent(
+    (new Heading('The Discovery', level: 2))
+        ->setTextStyle('heading-default')
+);
+
+$article->addComponent(
+    (new Body('<p>The team spent over <strong>three years</strong> conducting experiments.</p>'))
+        ->setTextStyle('body-default')
+        ->setFormat('html')
+);
+
+// 6. Publish
+$response = $client->createArticle($_ENV['CHANNEL_ID'], $article);
+echo "Published: " . $response['data']['id'] . "\n";
+echo "Share URL: " . $response['data']['shareUrl'] . "\n";
+```
+
+### Photo Gallery Article
+
+```php
+use TomGould\AppleNews\Document\Components\{Gallery, Figure, Container};
+use TomGould\AppleNews\Document\Layouts\CollectionDisplay;
+use TomGould\AppleNews\Document\Animations\FadeInAnimation;
+
+$article = Article::create('gallery-' . uniqid(), 'Summer Photo Collection', 'en');
+
+$article->addComponent(new Title('Summer Photo Collection'));
+$article->addComponent(new Body('A visual journey through the best moments of summer.'));
+
+// Method 1: Built-in Gallery component (horizontal scroll)
+$gallery = new Gallery();
+$gallery
+    ->addItem(
+        (new Figure())
+            ->setUrl('https://example.com/summer/beach.jpg')
+            ->setCaption('Golden hour at the beach')
+            ->setAccessibilityCaption('Sun setting over calm ocean waves')
+    )
+    ->addItem(
+        (new Figure())
+            ->setUrl('https://example.com/summer/mountains.jpg')
+            ->setCaption('Alpine meadows in bloom')
+    );
+
+$article->addComponent($gallery);
+
+// Method 2: Grid layout using Container (responsive)
+$gridGallery = new Container();
+$gridGallery->setContentDisplayObject(
+    CollectionDisplay::grid(gutter: 10, minimumWidth: 200)
+);
+
+$images = [
+    ['url' => 'https://example.com/img1.jpg', 'caption' => 'Image 1'],
+    ['url' => 'https://example.com/img2.jpg', 'caption' => 'Image 2'],
+    ['url' => 'https://example.com/img3.jpg', 'caption' => 'Image 3'],
+];
+
+foreach ($images as $index => $img) {
+    $photo = Photo::fromUrl($img['url'])
+        ->setCaption($img['caption'])
+        ->setAnimationObject(FadeInAnimation::withDelay($index * 0.1));
+    $gridGallery->addComponent($photo);
+}
+
+$article->addComponent($gridGallery);
+```
+
+### Social Media Embed Article
+
+```php
+use TomGould\AppleNews\Document\Components\{
+    Tweet, Instagram, FacebookPost, EmbedWebVideo, TikTok
+};
+
+$article = Article::create('social-roundup-' . date('Ymd'), 'What\'s Trending', 'en');
+
+$article->addComponent(new Title('What\'s Trending Today'));
+
+// Twitter/X embed
+$article->addComponent(new Heading('From Twitter', level: 2));
+$article->addComponent(new Tweet('https://twitter.com/NASA/status/1234567890'));
+
+// Instagram embed
+$article->addComponent(new Heading('On Instagram', level: 2));
+$article->addComponent(new Instagram('https://www.instagram.com/p/ABC123xyz/'));
+
+// YouTube video
+$article->addComponent(new Heading('Must-Watch Video', level: 2));
+$article->addComponent(
+    (new EmbedWebVideo('https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
+        ->setCaption('The video everyone is talking about')
+);
+
+// TikTok embed
+$article->addComponent(new TikTok('https://www.tiktok.com/@user/video/1234567890'));
+
+// Facebook post
+$article->addComponent(new FacebookPost('https://www.facebook.com/NASA/posts/123'));
+```
+
+### Long-Form Feature with Immersive Header
+
+```php
+use TomGould\AppleNews\Document\Components\{Header, Intro, Pullquote};
+use TomGould\AppleNews\Document\Scenes\ParallaxScaleHeader;
+use TomGould\AppleNews\Document\Styles\Fills\ImageFill;
+use TomGould\AppleNews\Document\Styles\DocumentStyle;
+
+$article = Article::create('feature-' . uniqid(), 'The Future of AI', 'en', columns: 12, width: 1280);
+
+// Document-level styling
+$docStyle = new DocumentStyle();
+$docStyle->setBackgroundColor('#FFFFFF');
+$article->setDocumentStyle($docStyle);
+
+// Metadata with transparent toolbar for immersive effect
+$article->setMetadata(
+    (new Metadata())
+        ->addAuthor('Tech Correspondent')
+        ->setExcerpt('An in-depth look at artificial intelligence.')
+        ->setDatePublished(new DateTime())
+        ->setTransparentToolbar(true)
+        ->setVideoURL('https://example.com/ai-preview.mp4')
+);
+
+// Immersive header with parallax effect
+$header = new Header();
+$header
+    ->setScene(ParallaxScaleHeader::create())
+    ->setStyle([
+        'fill' => (new ImageFill('https://example.com/ai-hero.jpg'))
+            ->asCover()
+            ->setVerticalAlignment('center')
+            ->jsonSerialize()
+    ]);
+
+$header->addComponent(
+    (new Title('The Future of Artificial Intelligence'))
+        ->setTextStyle([
+            'textColor' => '#FFFFFF',
+            'fontSize' => 48,
+            'fontWeight' => 'bold',
+            'textShadow' => [
+                'radius' => 15,
+                'opacity' => 0.6,
+                'color' => '#000000'
+            ]
+        ])
+);
+
+$article->addComponent($header);
+
+// Drop cap intro
+$article->addComponent(
+    (new Intro('The machines are learning fast. In laboratories around the world, AI systems are achieving feats that seemed like science fiction.'))
+        ->setTextStyle([
+            'dropCapStyle' => [
+                'numberOfLines' => 4,
+                'numberOfCharacters' => 1,
+                'fontName' => 'Georgia-Bold',
+                'textColor' => '#007AFF'
+            ],
+            'fontSize' => 20,
+            'lineHeight' => 32
+        ])
+);
+
+// Pull quote
+$article->addComponent(
+    (new Pullquote('"We\'re building new forms of intelligence."'))
+        ->setTextStyle([
+            'fontName' => 'Georgia-Italic',
+            'fontSize' => 28,
+            'textColor' => '#007AFF'
+        ])
+);
+```
+
+---
+
+## Component Reference
+
+### Text Components
+
+| Component | Role | Key Properties |
+|-----------|------|----------------|
+| `Title` | title | text |
+| `Heading` | heading1-6 | text, level (1-6) |
+| `Body` | body | text, format (html/none) |
+| `Intro` | intro | text, drop cap support |
+| `Caption` | caption | text |
+| `Pullquote` | pullquote | text |
+| `Quote` | quote | text |
+| `Byline` | byline | text |
+| `Author` | author | text |
+| `Photographer` | photographer | text |
+| `Illustrator` | illustrator | text |
+
+### Media Components
+
+| Component | Factory Methods |
+|-----------|-----------------|
+| `Photo` | `fromUrl()`, `fromBundle()` |
+| `Figure` | `fromUrl()`, `fromBundle()` |
+| `Portrait` | - |
+| `Logo` | - |
+| `Gallery` | `addItem()` |
+| `Mosaic` | - |
+| `Video` | `fromUrl()`, `fromBundle()` |
+| `Audio` | `fromUrl()`, `fromBundle()` |
+| `Music` | - |
+| `Podcast` | - |
+| `ARKit` | `fromUrl()`, `fromBundle()` |
+
+### Social Embeds
+
+| Component | Constructor |
+|-----------|-------------|
+| `Tweet` | `new Tweet($url)` |
+| `Instagram` | `new Instagram($url)` |
+| `FacebookPost` | `new FacebookPost($url)` |
+| `TikTok` | `new TikTok($url)` |
+| `EmbedWebVideo` | `new EmbedWebVideo($url)` |
+
+### Structure Components
+
+| Component | Key Methods |
+|-----------|-------------|
+| `Container` | `addComponent()`, `setContentDisplay()` |
+| `Section` | `addComponent()` |
+| `Header` | `setScene()` |
+| `Chapter` | - |
+| `Aside` | - |
+| `Divider` | - |
+| `FlexibleSpacer` | - |
+
+### Data & Interactive
+
+| Component | Key Methods |
+|-----------|-------------|
+| `DataTable` | `setData()`, `setSortBy()` |
+| `HTMLTable` | `fromHtml()` |
+| `Map` | constructor(lat, lng) |
+| `LinkButton` | constructor(text, url) |
+| `ArticleLink` | `fromArticleId()` |
+| `BannerAdvertisement` | - |
+| `MediumRectangleAdvertisement` | - |
+
+---
+
+## Layouts & Containers
+
+### Horizontal Stack
+
+```php
 use TomGould\AppleNews\Document\Layouts\HorizontalStackDisplay;
 
 $container = new Container();
-$container
-    ->setContentDisplayObject(new HorizontalStackDisplay())
-    ->addComponent(
-        Photo::fromUrl('https://example.com/thumbnail.jpg')
-            ->setLayout(['minimumWidth' => '30%'])
-    )
-    ->addComponent(
-        (new Body('Article summary text goes here...'))
-            ->setLayout(['minimumWidth' => '60%'])
-    );
+$container->setContentDisplayObject(new HorizontalStackDisplay());
+
+$container->addComponent(
+    Photo::fromUrl('https://example.com/sidebar.jpg')
+        ->setLayout(['minimumWidth' => '40cw'])
+);
+
+$container->addComponent(
+    (new Body('Article content...'))
+        ->setLayout(['minimumWidth' => '55cw'])
+);
 
 $article->addComponent($container);
 ```
 
-### Grid Layout (Image Gallery)
+### Grid Layout
 
 ```php
 use TomGould\AppleNews\Document\Layouts\CollectionDisplay;
 
-$gallery = new Container();
-$gallery->setContentDisplayObject(
-    CollectionDisplay::grid(gutter: 10, minimumWidth: 150)
+$grid = new Container();
+$grid->setContentDisplayObject(
+    CollectionDisplay::grid(gutter: 15, minimumWidth: 250)
 );
 
-foreach ($images as $url) {
-    $gallery->addComponent(Photo::fromUrl($url));
+for ($i = 0; $i < 6; $i++) {
+    $grid->addComponent(createCard($i));
 }
 
-$article->addComponent($gallery);
+$article->addComponent($grid);
 ```
 
-### Two-Column Article Layout
+### Column-Based Layouts
 
 ```php
-$twoColumnLayout = new Container();
-$twoColumnLayout->setContentDisplayObject(new HorizontalStackDisplay());
-
-// Left column - main content (70%)
-$mainColumn = new Container();
-$mainColumn
-    ->setLayout(['minimumWidth' => '70cw']) // 70% column width
-    ->addComponent(new Body($mainText));
-
-// Right column - sidebar (30%)
-$sidebar = new Container();
-$sidebar
-    ->setLayout(['minimumWidth' => '30cw'])
-    ->addComponent(new Aside('Related articles...'))
-    ->addComponent(new LinkButton('Read More', 'https://example.com'));
-
-$twoColumnLayout
-    ->addComponent($mainColumn)
-    ->addComponent($sidebar);
-
-$article->addComponent($twoColumnLayout);
-```
-
----
-
-## Nested Containers
-
-### Card Component Pattern
-
-```php
-use TomGould\AppleNews\Document\Styles\Fills\ColorFill;
-
-function createCard(string $title, string $body, string $imageUrl): Container
-{
-    $card = new Container();
-    
-    // Card background
-    $card->setStyle([
-        'backgroundColor' => '#FFFFFF',
-        'border' => [
-            'all' => ['width' => 1, 'color' => '#E0E0E0']
-        ],
-        'mask' => ['type' => 'corners', 'radius' => 12]
-    ]);
-    
-    $card
-        ->addComponent(Photo::fromUrl($imageUrl))
-        ->addComponent(
-            (new Heading($title, level: 3))
-                ->setLayout(['margin' => ['top' => 15, 'left' => 15, 'right' => 15]])
-        )
-        ->addComponent(
-            (new Body($body))
-                ->setLayout(['margin' => ['left' => 15, 'right' => 15, 'bottom' => 15]])
-        );
-    
-    return $card;
-}
-
-// Usage
-$cardsContainer = new Container();
-$cardsContainer->setContentDisplayObject(
-    CollectionDisplay::grid(gutter: 20, minimumWidth: 280)
-);
-
-$cardsContainer
-    ->addComponent(createCard('Card 1', 'Description...', 'https://...'))
-    ->addComponent(createCard('Card 2', 'Description...', 'https://...'))
-    ->addComponent(createCard('Card 3', 'Description...', 'https://...'));
-
-$article->addComponent($cardsContainer);
-```
-
-### Collapsible Section
-
-```php
-$section = new Section();
-$section->setIdentifier('expandable-section');
-
-$header = new Header();
-$header->addComponent(
-    (new Heading('Click to Expand', level: 2))
-        ->setAdditions([
-            'type' => 'link',
-            'URL' => '#expandable-content'
-        ])
-);
-
-$content = new Container();
-$content
-    ->setIdentifier('expandable-content')
-    ->addComponent(new Body('Hidden content that expands...'));
-
-$section
-    ->addComponent($header)
-    ->addComponent($content);
-```
-
----
-
-## Data Tables
-
-### Basic Data Table
-
-```php
-use TomGould\AppleNews\Document\Components\DataTable;
-
-$table = new DataTable();
-$table->setData([
-    'descriptors' => [
-        ['identifier' => 'name', 'dataType' => 'string', 'label' => 'Product'],
-        ['identifier' => 'price', 'dataType' => 'number', 'label' => 'Price ($)'],
-        ['identifier' => 'stock', 'dataType' => 'integer', 'label' => 'In Stock'],
-    ],
-    'records' => [
-        ['name' => 'Widget A', 'price' => 19.99, 'stock' => 150],
-        ['name' => 'Widget B', 'price' => 29.99, 'stock' => 75],
-        ['name' => 'Widget C', 'price' => 9.99, 'stock' => 300],
-    ],
+// Span specific columns (7-column layout)
+$component->setLayout([
+    'columnStart' => 1,
+    'columnSpan' => 5,
 ]);
 
-$table
-    ->setShowDescriptorLabels(true)
-    ->addSortBy('price', 'ascending');
+// Full-bleed (ignore margins)
+$component->setLayout([
+    'ignoreDocumentMargin' => true,
+    'columnStart' => 0,
+    'columnSpan' => 7,
+]);
 
-$article->addComponent($table);
+// With margins
+$component->setLayout([
+    'columnStart' => 1,
+    'columnSpan' => 5,
+    'margin' => ['top' => 20, 'bottom' => 20]
+]);
 ```
 
-### Styled Data Table
+---
+
+## Styling & Themes
+
+### Text Styles
 
 ```php
-use TomGould\AppleNews\Document\Styles\TableStyle;
-use TomGould\AppleNews\Document\Styles\TableCellStyle;
-use TomGould\AppleNews\Document\Styles\TableRowStyle;
+use TomGould\AppleNews\Document\Styles\ComponentTextStyle;
 
-// Define table style
-$tableStyle = new TableStyle();
-$tableStyle
-    ->setHeaderRowStyle(
-        (new TableRowStyle())
-            ->setBackgroundColor('#007AFF')
-            ->setTextStyle(['textColor' => '#FFFFFF', 'fontWeight' => 'bold'])
-    )
-    ->setRowStyle(
-        (new TableRowStyle())
-            ->setBackgroundColor('#FFFFFF')
-            ->setDivider(['width' => 1, 'color' => '#E0E0E0'])
-    )
-    ->setCellStyle(
-        (new TableCellStyle())
-            ->setPadding(12)
-            ->setTextStyle(['fontSize' => 14])
-    );
+$bodyStyle = (new ComponentTextStyle())
+    ->setFontName('Georgia')
+    ->setFontSize(18)
+    ->setLineHeight(28)
+    ->setTextColor('#333333')
+    ->setFontWeight('regular')
+    ->setFontStyle('normal')
+    ->setTextAlignment('left')
+    ->setTracking(0)
+    ->setParagraphSpacingBefore(12)
+    ->setParagraphSpacingAfter(12);
 
-$article->addTableStyle('statsTable', $tableStyle);
+$article->addComponentTextStyle('body-style', $bodyStyle);
+$body = (new Body('Text'))->setTextStyle('body-style');
+```
 
-$table = new DataTable();
-$table
-    ->setData($tableData)
-    ->setDataTableStyle('statsTable');
+### Drop Caps
+
+```php
+$introStyle = (new ComponentTextStyle())
+    ->setFontName('Georgia')
+    ->setFontSize(20)
+    ->setDropCapStyle([
+        'numberOfLines' => 3,
+        'numberOfCharacters' => 1,
+        'fontName' => 'Georgia-Bold',
+        'textColor' => '#007AFF',
+        'padding' => 5
+    ]);
+```
+
+### Text Shadows
+
+```php
+$titleStyle = (new ComponentTextStyle())
+    ->setFontName('HelveticaNeue-Bold')
+    ->setFontSize(48)
+    ->setTextColor('#FFFFFF')
+    ->setTextShadow([
+        'radius' => 10,
+        'opacity' => 0.5,
+        'color' => '#000000',
+        'offset' => ['x' => 2, 'y' => 2]
+    ]);
 ```
 
 ---
 
 ## Dark Mode Support
 
-### Automatic Dark Mode Styling
+### Conditional Text Styles
 
 ```php
-use TomGould\AppleNews\Document\Conditionals\ConditionalComponentStyle;
-use TomGould\AppleNews\Document\Conditionals\ConditionalTextStyle;
-
-// Create styles for both modes
-$lightBodyStyle = (new ComponentTextStyle())
+$bodyStyle = (new ComponentTextStyle())
+    ->setFontName('Georgia')
+    ->setFontSize(18)
     ->setTextColor('#1C1C1E')
-    ->setFontSize(17);
+    ->setConditional([
+        [
+            'conditions' => [['preferredColorScheme' => 'dark']],
+            'textColor' => '#F2F2F7'
+        ]
+    ]);
+```
 
-$darkBodyStyle = (new ComponentTextStyle())
-    ->setTextColor('#F2F2F7')
-    ->setFontSize(17)
-    ->addCondition(
-        ConditionalTextStyle::darkMode(['textColor' => '#F2F2F7'])
-    );
+### Conditional Document Style
 
-$article->addComponentTextStyle('body', $lightBodyStyle);
+```php
+use TomGould\AppleNews\Document\Styles\DocumentStyle;
 
-// Container with dark mode background
+$docStyle = new DocumentStyle();
+$docStyle
+    ->setBackgroundColor('#FFFFFF')
+    ->addConditional([
+        'conditions' => [['preferredColorScheme' => 'dark']],
+        'backgroundColor' => '#000000'
+    ]);
+
+$article->setDocumentStyle($docStyle);
+```
+
+### Conditional Component Styles
+
+```php
 $container = new Container();
 $container->setStyle([
-    'backgroundColor' => '#FFFFFF',
+    'backgroundColor' => '#F5F5F5',
     'conditional' => [
         [
             'conditions' => [['preferredColorScheme' => 'dark']],
@@ -263,434 +524,243 @@ $container->setStyle([
 ]);
 ```
 
-### Complete Dark Mode Article
+---
+
+## Background Fills
+
+### Image Fills
 
 ```php
-// Document-level dark mode
-$documentStyle = new DocumentStyle();
-$documentStyle
-    ->setBackgroundColor('#FFFFFF')
-    ->addConditional([
-        'conditions' => [['preferredColorScheme' => 'dark']],
-        'backgroundColor' => '#000000'
-    ]);
+use TomGould\AppleNews\Document\Styles\Fills\ImageFill;
 
-$article->setDocumentStyle($documentStyle);
+$coverFill = (new ImageFill('https://example.com/bg.jpg'))
+    ->asCover()
+    ->setVerticalAlignment('center')
+    ->setHorizontalAlignment('center');
 
-// Text styles with dark mode variants
-$headingStyle = (new ComponentTextStyle())
-    ->setTextColor('#000000')
-    ->setFontWeight('bold')
-    ->setFontSize(28)
-    ->setConditional([
-        [
-            'conditions' => [['preferredColorScheme' => 'dark']],
-            'textColor' => '#FFFFFF'
-        ]
-    ]);
+$container = new Container();
+$container->setStyle(['fill' => $coverFill->jsonSerialize()]);
+```
 
-$article->addComponentTextStyle('heading', $headingStyle);
+### Gradient Fills
+
+```php
+use TomGould\AppleNews\Document\Styles\Fills\LinearGradientFill;
+
+$gradient = LinearGradientFill::vertical('#000000', '#333333');
+```
+
+### Video Fills
+
+```php
+use TomGould\AppleNews\Document\Styles\Fills\VideoFill;
+
+$videoFill = (new VideoFill('https://example.com/bg-video.mp4'))
+    ->setLoop(true)
+    ->setStillUrl('https://example.com/poster.jpg');
+```
+
+---
+
+## Animations & Behaviors
+
+### Animations
+
+```php
+use TomGould\AppleNews\Document\Animations\*;
+
+$component->setAnimationObject(FadeInAnimation::standard());
+$component->setAnimationObject(MoveInAnimation::fromLeft());
+$component->setAnimationObject(MoveInAnimation::fromRight());
+$component->setAnimationObject(ScaleFadeAnimation::subtle());
+$component->setAnimationObject(FadeInAnimation::withDelay(0.3));
+```
+
+### Behaviors
+
+```php
+use TomGould\AppleNews\Document\Behaviors\*;
+
+$photo->setBehaviorObject(Parallax::withFactor(0.5));
+$header->setBehaviorObject(BackgroundParallax::withFactor(0.8));
+$component->setBehaviorObject(Springy::create());
+$component->setBehaviorObject(Motion::create());
+```
+
+### Scenes (Header Effects)
+
+```php
+use TomGould\AppleNews\Document\Scenes\*;
+
+$header->setScene(FadingStickyHeader::create());
+$header->setScene(ParallaxScaleHeader::create());
 ```
 
 ---
 
 ## Advertising Integration
 
-### Banner Ad Placement
+### Manual Ad Placement
 
 ```php
-use TomGould\AppleNews\Document\Components\BannerAdvertisement;
+use TomGould\AppleNews\Document\Components\{
+    BannerAdvertisement, MediumRectangleAdvertisement
+};
 
-// After article intro
 $article->addComponent(new Title($title));
 $article->addComponent(new Intro($intro));
-$article->addComponent(new BannerAdvertisement());  // Auto-placed banner
+$article->addComponent(new BannerAdvertisement());
 $article->addComponent(new Body($content));
 ```
 
-### Auto-Placement Configuration
+### Automatic Ad Placement
 
 ```php
-// Configure automatic ad placement
+use TomGould\AppleNews\Document\Layouts\AdvertisementAutoPlacement;
+
+$autoPlacement = (new AdvertisementAutoPlacement())
+    ->setEnabled(true)
+    ->setBannerType('any')
+    ->setDistanceFromMedia('10vh')
+    ->setFrequency(5)
+    ->setLayout(['margin' => ['top' => 20, 'bottom' => 20]]);
+
 $article->setAutoplacement([
-    'advertisement' => [
-        'enabled' => true,
-        'bannerType' => 'any',
-        'distanceFromMedia' => '10vh',  // 10% viewport height from media
-        'frequency' => 5,               // Every 5 components
-        'layout' => [
-            'margin' => ['top' => 20, 'bottom' => 20]
-        ]
-    ]
+    'advertisement' => $autoPlacement->jsonSerialize()
 ]);
-```
-
-### Medium Rectangle Ads in Sidebar
-
-```php
-use TomGould\AppleNews\Document\Components\MediumRectangleAdvertisement;
-
-$sidebar = new Container();
-$sidebar
-    ->setLayout(['minimumWidth' => '300pt'])
-    ->addComponent(new Heading('Sponsored', level: 4))
-    ->addComponent(new MediumRectangleAdvertisement());
 ```
 
 ---
 
-## Real-World Article Templates
+## API Operations
 
-### News Article Template
-
-```php
-function createNewsArticle(array $data): Article
-{
-    $article = Article::create(
-        identifier: $data['id'],
-        title: $data['title'],
-        language: 'en'
-    );
-
-    // Metadata
-    $article->setMetadata(
-        (new Metadata())
-            ->addAuthor($data['author'])
-            ->setExcerpt($data['excerpt'])
-            ->setDatePublished(new DateTime($data['published_at']))
-            ->setDateModified(new DateTime($data['updated_at'] ?? 'now'))
-            ->setContentGenerationType('none')
-            ->addKeywords($data['tags'] ?? [])
-    );
-
-    // Hero section
-    $article->addComponent(new Title($data['title']));
-    
-    if (!empty($data['hero_image'])) {
-        $article->addComponent(
-            (new Figure())
-                ->setUrl($data['hero_image'])
-                ->setCaption($data['hero_caption'] ?? '')
-                ->setAccessibilityCaption($data['hero_alt'] ?? $data['title'])
-        );
-    }
-
-    // Byline
-    $article->addComponent(
-        (new Byline(sprintf('By %s | %s', 
-            $data['author'],
-            (new DateTime($data['published_at']))->format('F j, Y')
-        )))
-    );
-
-    // Article body (handle paragraphs)
-    foreach (explode("\n\n", $data['body']) as $paragraph) {
-        if (trim($paragraph)) {
-            $article->addComponent(new Body(trim($paragraph)));
-        }
-    }
-
-    return $article;
-}
-```
-
-### Long-Form Feature Template
+### Create Article with Assets
 
 ```php
-function createFeatureArticle(array $data): Article
-{
-    $article = Article::create(
-        identifier: $data['id'],
-        title: $data['title'],
-        language: 'en',
-        columns: 12,  // More columns for complex layouts
-        width: 1280
-    );
+use TomGould\AppleNews\Request\ArticleMetadata;
+use TomGould\AppleNews\Enum\MaturityRating;
 
-    // Immersive header with parallax
-    $header = new Header();
-    $header
-        ->setScene(ParallaxScaleHeader::create())
-        ->setStyle([
-            'fill' => [
-                'type' => 'image',
-                'URL' => $data['hero_image'],
-                'fillMode' => 'cover'
-            ]
-        ])
-        ->addComponent(
-            (new Title($data['title']))
-                ->setTextStyle([
-                    'textColor' => '#FFFFFF',
-                    'fontSize' => 48,
-                    'textShadow' => [
-                        'radius' => 10,
-                        'opacity' => 0.5,
-                        'color' => '#000000'
-                    ]
-                ])
-        );
+$article->addComponent(Photo::fromBundle('hero.jpg'));
 
-    $article->addComponent($header);
+$requestMeta = (new ArticleMetadata())
+    ->setIsSponsored(false)
+    ->setIsCandidateToBeFeatured(true)
+    ->setMaturityRating(MaturityRating::GENERAL)
+    ->addTargetTerritories(['US', 'GB', 'CA'])
+    ->addSectionById('section-123');
 
-    // Drop cap intro
-    $article->addComponent(
-        (new Intro($data['intro']))
-            ->setTextStyle([
-                'dropCapStyle' => [
-                    'numberOfLines' => 3,
-                    'numberOfCharacters' => 1,
-                    'fontName' => 'Georgia-Bold'
-                ]
-            ])
-    );
-
-    // Content sections with pull quotes
-    foreach ($data['sections'] as $section) {
-        $article->addComponent(new Heading($section['title'], level: 2));
-        
-        if (!empty($section['pullquote'])) {
-            $article->addComponent(new Pullquote($section['pullquote']));
-        }
-        
-        $article->addComponent(new Body($section['content']));
-        
-        if (!empty($section['image'])) {
-            $article->addComponent(
-                (new Figure())
-                    ->setUrl($section['image'])
-                    ->setCaption($section['caption'] ?? '')
-                    ->setAnimation(FadeInAnimation::standard())
-            );
-        }
-    }
-
-    return $article;
-}
-```
-
-### Photo Essay Template
-
-```php
-function createPhotoEssay(array $data): Article
-{
-    $article = Article::create(
-        identifier: $data['id'],
-        title: $data['title'],
-        language: 'en'
-    );
-
-    $article->addComponent(new Title($data['title']));
-    $article->addComponent(new Intro($data['intro']));
-
-    foreach ($data['photos'] as $index => $photo) {
-        // Full-bleed image
-        $figure = (new Figure())
-            ->setUrl($photo['url'])
-            ->setCaption($photo['caption'])
-            ->setLayout([
-                'ignoreDocumentMargin' => true,
-                'columnStart' => 0,
-                'columnSpan' => 7
-            ])
-            ->setAnimation(
-                $index % 2 === 0 
-                    ? MoveInAnimation::fromLeft() 
-                    : MoveInAnimation::fromRight()
-            );
-
-        $article->addComponent($figure);
-
-        // Optional commentary
-        if (!empty($photo['commentary'])) {
-            $article->addComponent(
-                (new Body($photo['commentary']))
-                    ->setLayout([
-                        'columnStart' => 1,
-                        'columnSpan' => 5
-                    ])
-            );
-        }
-    }
-
-    return $article;
-}
-```
-
----
-
-## Performance Optimization
-
-### Image Optimization
-
-```php
-// Always specify dimensions when known
-$photo = Photo::fromUrl('https://example.com/image.jpg');
-$photo->setLayout([
-    'minimumHeight' => '300pt',  // Prevents layout shift
-]);
-
-// Use explicit dimensions for faster rendering
-$photo->setExplicitDimensions(width: 1200, height: 800);
-
-// Prefer WebP for smaller file sizes
-// Apple News handles format conversion, but starting with optimized images helps
-```
-
-### Lazy Component Loading
-
-```php
-// For very long articles, consider chunking
-function createLongArticle(array $sections): Article
-{
-    $article = Article::create(/* ... */);
-    
-    foreach ($sections as $index => $section) {
-        // Add a divider between sections for visual breaks
-        if ($index > 0) {
-            $article->addComponent(new Divider());
-        }
-        
-        // Each section as a container for isolation
-        $sectionContainer = new Container();
-        $sectionContainer->setIdentifier("section-{$index}");
-        
-        // ... add section content
-        
-        $article->addComponent($sectionContainer);
-    }
-    
-    return $article;
-}
-```
-
-### Asset Bundling Strategy
-
-```php
-// For articles with many images, bundle critical assets
-$criticalAssets = [
+$assets = [
     'bundle://hero.jpg' => '/path/to/hero.jpg',
-    'bundle://author.jpg' => '/path/to/author.jpg',
 ];
 
-// Non-critical images can be remote URLs
-// Apple News will fetch and cache them
-$article->addComponent(Photo::fromBundle('hero.jpg'));      // Bundled
-$article->addComponent(Photo::fromUrl('https://cdn/1.jpg')); // Remote
-
-$client->createArticle($channelId, $article, null, $criticalAssets);
+$response = $client->createArticle($channelId, $article, $requestMeta->toArray(), $assets);
+$articleId = $response['data']['id'];
+$revision = $response['data']['revision'];
 ```
 
----
-
-## Common Pitfalls
-
-### ❌ Missing Required Properties
+### Update Article
 
 ```php
-// WRONG: Photo without URL
-$photo = new Photo();  // Will fail validation
-
-// CORRECT:
-$photo = Photo::fromUrl('https://example.com/image.jpg');
-```
-
-### ❌ Invalid Identifier Format
-
-```php
-// WRONG: Spaces and special characters
-$article = Article::create(
-    identifier: 'My Article #1',  // Invalid!
-    // ...
-);
-
-// CORRECT: URL-safe identifiers
-$article = Article::create(
-    identifier: 'my-article-1',
-    // ...
-);
-```
-
-### ❌ Forgetting Revision Token on Updates
-
-```php
-// WRONG: Update without revision
-$client->updateArticle($articleId, null, $article);  // Will fail!
-
-// CORRECT: Get current revision first
+// Always get fresh revision
 $current = $client->getArticle($articleId);
 $revision = $current['data']['revision'];
 $client->updateArticle($articleId, $revision, $article);
 ```
 
-### ❌ Text Format Mismatch
+### Search & Manage
 
 ```php
-// WRONG: HTML in plain text mode
-$body = new Body('<p>Some <strong>bold</strong> text</p>');
-// Will render literally as "<p>Some <strong>bold</strong> text</p>"
+// Search
+$results = $client->searchArticlesInChannel($channelId, ['pageSize' => 50]);
 
-// CORRECT: Set format explicitly
-$body = (new Body('<p>Some <strong>bold</strong> text</p>'))
-    ->setFormat('html');
-```
+// Channel operations
+$channel = $client->getChannel($channelId);
+$quota = $client->getChannelQuota($channelId);
+$sections = $client->listSections($channelId);
+$client->promoteArticles($sectionId, [$articleId1, $articleId2]);
 
-### ❌ Asset Path Confusion
-
-```php
-// WRONG: Local path as URL
-$photo = Photo::fromUrl('/var/www/images/hero.jpg');  // Won't work!
-
-// CORRECT: Use bundle for local files
-$photo = Photo::fromBundle('hero.jpg');
-// Then provide the mapping when publishing:
-$client->createArticle($channelId, $article, null, [
-    'bundle://hero.jpg' => '/var/www/images/hero.jpg'
-]);
+// Delete
+$client->deleteArticle($articleId);
 ```
 
 ---
 
-## Debugging Tips
+## Production Patterns
 
-### Validate Before Publishing
-
-```php
-// Export to JSON for inspection
-$json = json_encode($article, JSON_PRETTY_PRINT);
-file_put_contents('debug-article.json', $json);
-
-// Validate with Apple's format
-// https://developer.apple.com/news-publisher/
-```
-
-### Catch Detailed Errors
+### CMS Integration
 
 ```php
-try {
-    $response = $client->createArticle($channelId, $article);
-} catch (AppleNewsException $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    echo "Code: " . $e->getErrorCode() . "\n";
-    echo "KeyPath: " . $e->getKeyPath() . "\n";  // Shows exactly which field failed
-    
-    // Log the full request for debugging
-    file_put_contents('failed-article.json', json_encode($article, JSON_PRETTY_PRINT));
+class AppleNewsPublisher
+{
+    public function publishFromCMS(CMSArticle $cmsArticle): string
+    {
+        $article = Article::create(
+            identifier: 'cms-' . $cmsArticle->getId(),
+            title: $cmsArticle->getTitle(),
+            language: $cmsArticle->getLocale()
+        );
+        
+        $metadata = new Metadata();
+        $metadata
+            ->setDatePublished($cmsArticle->getPublishedAt())
+            ->setCanonicalURL($cmsArticle->getUrl())
+            ->setExcerpt($cmsArticle->getExcerpt());
+        
+        foreach ($cmsArticle->getAuthors() as $author) {
+            $metadata->addAuthor($author->getName());
+        }
+        
+        $article->setMetadata($metadata);
+        
+        foreach ($cmsArticle->getBlocks() as $block) {
+            $article->addComponent($this->convertBlock($block));
+        }
+        
+        $response = $this->client->createArticle($this->channelId, $article);
+        return $response['data']['id'];
+    }
 }
 ```
 
-### Test Locally
+### Error Handling with Retry
 
 ```php
-// Create a test harness
-function testArticleStructure(Article $article): array
+function publishWithRetry(AppleNewsClient $client, string $channelId, Article $article, int $maxRetries = 3): array
+{
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        try {
+            return $client->createArticle($channelId, $article);
+        } catch (AuthenticationException $e) {
+            throw $e; // Don't retry auth errors
+        } catch (AppleNewsException $e) {
+            if ($e->getCode() === 429) {
+                sleep(pow(2, $attempt));
+                continue;
+            }
+            if ($e->getCode() >= 500) {
+                sleep(1);
+                continue;
+            }
+            throw $e;
+        }
+    }
+    throw new Exception("Max retries exceeded");
+}
+```
+
+### Validation Before Publish
+
+```php
+function validateArticle(Article $article): array
 {
     $errors = [];
     $json = $article->jsonSerialize();
     
-    // Check required fields
     if (empty($json['identifier'])) {
         $errors[] = 'Missing identifier';
+    }
+    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $json['identifier'] ?? '')) {
+        $errors[] = 'Invalid identifier format';
     }
     if (empty($json['title'])) {
         $errors[] = 'Missing title';
@@ -699,75 +769,101 @@ function testArticleStructure(Article $article): array
         $errors[] = 'No components';
     }
     
-    // Check component structure
-    foreach ($json['components'] ?? [] as $i => $component) {
-        if (empty($component['role'])) {
-            $errors[] = "Component {$i} missing role";
-        }
-    }
-    
     return $errors;
 }
 ```
 
 ---
 
-## Migration Guide
+## Common Pitfalls
 
-### From Older Versions
+### ❌ Invalid Identifier
 
 ```php
-// v1.x → v2.x changes:
+// WRONG
+Article::create('My Article #1', 'Title');
 
-// OLD: Array-based layout
-$component->setLayout(['columnSpan' => 5]);
-
-// NEW: Same, but with type-safe options available
-use TomGould\AppleNews\Document\Layouts\ComponentLayout;
-$component->setLayoutObject(
-    (new ComponentLayout())->setColumnSpan(5)
-);
-
-// OLD: Manual JSON for styles
-$article->addComponentStyle('myStyle', [
-    'backgroundColor' => '#FFF'
-]);
-
-// NEW: Type-safe style objects
-use TomGould\AppleNews\Document\Styles\ComponentStyle;
-$article->addComponentStyleObject('myStyle', 
-    (new ComponentStyle())->setBackgroundColor('#FFF')
-);
+// CORRECT
+Article::create('my-article-1', 'Title');
 ```
 
-### From Raw JSON to This Library
+### ❌ Missing Revision on Update
 
 ```php
-// If migrating from hand-crafted JSON:
+// WRONG
+$client->updateArticle($articleId, null, $article);
 
-// OLD JSON structure:
-$json = [
-    'identifier' => '123',
-    'title' => 'Test',
-    'components' => [
-        ['role' => 'body', 'text' => 'Hello']
-    ]
-];
+// CORRECT
+$current = $client->getArticle($articleId);
+$client->updateArticle($articleId, $current['data']['revision'], $article);
+```
 
-// NEW: Use the fluent API
-$article = Article::create('123', 'Test', 'en');
-$article->addComponent(new Body('Hello'));
+### ❌ HTML Without Format
 
-// The jsonSerialize() output will match your old structure
+```php
+// WRONG - renders as literal text
+$body = new Body('<p><strong>Bold</strong></p>');
+
+// CORRECT
+$body = (new Body('<p><strong>Bold</strong></p>'))->setFormat('html');
+```
+
+### ❌ Local Path as URL
+
+```php
+// WRONG
+Photo::fromUrl('/var/www/images/hero.jpg');
+
+// CORRECT
+Photo::fromBundle('hero.jpg');
+// + provide mapping: ['bundle://hero.jpg' => '/var/www/images/hero.jpg']
+```
+
+### ❌ Missing Accessibility
+
+```php
+// WRONG
+Photo::fromUrl('https://example.com/chart.jpg');
+
+// CORRECT
+Photo::fromUrl('https://example.com/chart.jpg')
+    ->setAccessibilityCaption('Bar chart showing quarterly revenue growth');
+```
+
+---
+
+## Debugging & Validation
+
+### Export JSON
+
+```php
+$json = json_encode($article, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+file_put_contents('debug-article.json', $json);
+```
+
+### Detailed Error Logging
+
+```php
+try {
+    $response = $client->createArticle($channelId, $article);
+} catch (AppleNewsException $e) {
+    $log = [
+        'message' => $e->getMessage(),
+        'errorCode' => $e->getErrorCode(),
+        'keyPath' => $e->getKeyPath(),
+    ];
+    file_put_contents('error.log', print_r($log, true));
+    throw $e;
+}
 ```
 
 ---
 
 ## Additional Resources
 
-- [Apple News Format Specification](https://developer.apple.com/documentation/applenewsformat)
-- [Apple News Publisher Guide](https://support.apple.com/guide/news-publisher/welcome/web)
-- [API Reference](https://developer.apple.com/documentation/applenewsapi)
+- [Apple News Format Documentation](https://developer.apple.com/documentation/apple_news/apple_news_format)
+- [Apple News API Documentation](https://developer.apple.com/documentation/apple_news_api)
+- [News Publisher User Guide](https://support.apple.com/guide/news-publisher/welcome/web)
 
 ---
 

@@ -1,34 +1,36 @@
 # Apple News API Troubleshooting Guide
 
-Solutions to common problems when using the Apple News API PHP client.
+Comprehensive solutions to common issues.
 
 ---
 
 ## Authentication Errors
 
-### `AuthenticationException: 401 Unauthorized`
+### `401 Unauthorized`
 
-**Cause:** Invalid API credentials or malformed signature.
-
-**Solutions:**
-1. Verify your Key ID and Secret are correct
-2. Ensure the secret is base64-encoded (as provided by Apple)
-3. Check server time sync (HMAC signatures are time-sensitive)
+**Causes:** Invalid credentials or clock skew.
 
 ```php
 // Verify credentials format
-$keyId = 'ABC123';           // Alphanumeric
-$secret = 'base64string==';  // Must be base64
+$keyId = 'ABC123DEF456';           // Alphanumeric
+$keySecret = 'base64string=';      // Must be base64-encoded
+
+// Check server time sync
+echo "Server time: " . date('c');
 ```
 
-### `AuthenticationException: 403 Forbidden`
+### `403 Forbidden`
 
-**Cause:** Valid credentials but insufficient permissions.
+**Causes:** Valid credentials but wrong channel or insufficient permissions.
 
-**Solutions:**
-1. Verify the channel ID belongs to your account
-2. Check API key permissions in Apple News Publisher
-3. Ensure the article isn't violating content policies
+```php
+// Verify channel access
+try {
+    $channel = $client->getChannel($channelId);
+} catch (AppleNewsException $e) {
+    echo "Cannot access channel: " . $e->getMessage();
+}
+```
 
 ---
 
@@ -36,127 +38,103 @@ $secret = 'base64string==';  // Must be base64
 
 ### `INVALID_DOCUMENT: Invalid identifier`
 
-**Cause:** Article identifier contains invalid characters.
-
 ```php
-// ❌ Invalid
-$article = Article::create('My Article #1', 'Title');
+// ❌ WRONG
+Article::create('My Article #1', 'Title');
+Article::create('article/2024', 'Title');
 
-// ✅ Valid (URL-safe characters only)
-$article = Article::create('my-article-1', 'Title');
-$article = Article::create('article_2024_01_15', 'Title');
+// ✅ CORRECT (URL-safe only)
+Article::create('my-article-1', 'Title');
+Article::create('article_2024_01', 'Title');
 ```
 
 ### `INVALID_DOCUMENT: components[X] missing required field`
-
-**Cause:** A component is missing required properties.
 
 ```php
 // ❌ Photo without URL
 $photo = new Photo();
 
-// ✅ Photo with URL
+// ✅ Correct
 $photo = Photo::fromUrl('https://example.com/image.jpg');
-```
-
-### `INVALID_DOCUMENT: Unknown component role`
-
-**Cause:** Typo in component role or unsupported component.
-
-```php
-// Components are created via classes, not arrays
-// If you see this error, you may be mixing raw JSON with the library
-
-// ❌ Raw array with typo
-$article->addComponent(['role' => 'boddy', 'text' => '...']);
-
-// ✅ Use component classes
-$article->addComponent(new Body('...'));
 ```
 
 ### `INVALID_DOCUMENT: Invalid text format`
 
-**Cause:** HTML content without format specification.
-
 ```php
 // ❌ HTML without format
-$body = new Body('<p>Content</p>');
+$body = new Body('<p><strong>Bold</strong></p>');
 
 // ✅ Specify HTML format
-$body = (new Body('<p>Content</p>'))->setFormat('html');
+$body = (new Body('<p><strong>Bold</strong></p>'))->setFormat('html');
+```
 
-// ✅ Or use plain text (default)
-$body = new Body('Plain content without HTML tags');
+### `INVALID_DOCUMENT: Invalid color value`
+
+```php
+// ❌ Invalid
+'rgb(255, 0, 0)'    // Not supported
+'red'                // Named colors not supported
+
+// ✅ Valid
+'#FF0000'            // 6-digit hex
+'#F00'               // 3-digit hex
+'#FF000080'          // 8-digit hex with alpha
+```
+
+### `INVALID_DOCUMENT: Invalid URL`
+
+```php
+// ❌ Invalid
+Photo::fromUrl('/local/path');
+Photo::fromUrl('file:///path');
+
+// ✅ Valid
+Photo::fromUrl('https://example.com/image.jpg');
+Photo::fromBundle('image.jpg');  // For local files
 ```
 
 ---
 
 ## Asset Errors
 
-### `INVALID_DOCUMENT: Asset not found`
-
-**Cause:** Bundle reference doesn't match provided assets.
+### `Asset not found: bundle://...`
 
 ```php
-// ❌ Mismatch
-$photo = Photo::fromBundle('hero.jpg');
+// ❌ Key mismatch
+$article->addComponent(Photo::fromBundle('hero.jpg'));
 $client->createArticle($channelId, $article, null, [
     'bundle://image.jpg' => '/path/to/hero.jpg'  // Wrong key!
 ]);
 
-// ✅ Keys must match
-$photo = Photo::fromBundle('hero.jpg');
+// ✅ Keys must match exactly
 $client->createArticle($channelId, $article, null, [
-    'bundle://hero.jpg' => '/path/to/hero.jpg'  // Correct
+    'bundle://hero.jpg' => '/path/to/hero.jpg'   // Correct
 ]);
-```
-
-### `INVALID_DOCUMENT: Invalid URL format`
-
-**Cause:** Malformed or inaccessible image URL.
-
-```php
-// ❌ Local path (not accessible to Apple)
-Photo::fromUrl('/var/www/images/hero.jpg');
-
-// ❌ Internal network
-Photo::fromUrl('http://192.168.1.100/image.jpg');
-
-// ✅ Public URL
-Photo::fromUrl('https://example.com/images/hero.jpg');
-
-// ✅ Or use bundle for local files
-Photo::fromBundle('hero.jpg');
 ```
 
 ### `ASSET_INGEST_FAILED`
 
-**Cause:** Apple couldn't download or process the asset.
-
-**Solutions:**
-1. Verify the URL is publicly accessible
-2. Check image format (JPEG, PNG, GIF supported)
-3. Ensure file isn't too large (< 20MB recommended)
-4. Confirm no authentication/CORS blocking
+**Causes:** URL inaccessible, unsupported format, file too large.
 
 ```bash
-# Test accessibility
+# Verify URL accessibility
 curl -I https://example.com/image.jpg
 ```
 
+**Supported formats:** JPEG, PNG, GIF  
+**Recommended size:** < 20MB for images
+
 ---
 
-## Update Errors
+## Update & Revision Errors
 
 ### `CONFLICT: Revision mismatch`
-
-**Cause:** Article was modified since you retrieved it.
 
 ```php
 // ❌ Using stale revision
 $client->updateArticle($articleId, $oldRevision, $article);
 
-// ✅ Get fresh revision before updating
+// ✅ Always get fresh revision
 $current = $client->getArticle($articleId);
 $freshRevision = $current['data']['revision'];
 $client->updateArticle($articleId, $freshRevision, $article);
@@ -164,110 +142,73 @@ $client->updateArticle($articleId, $freshRevision, $article);
 
 ### `NOT_FOUND: Article not found`
 
-**Cause:** Article was deleted or ID is incorrect.
-
 ```php
-// Double-check the article ID format
-$articleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';  // UUID format
-
-// Verify it exists before updating
-try {
-    $client->getArticle($articleId);
-} catch (AppleNewsException $e) {
-    // Article doesn't exist
+function articleExists(AppleNewsClient $client, string $articleId): bool
+{
+    try {
+        $client->getArticle($articleId);
+        return true;
+    } catch (AppleNewsException $e) {
+        return $e->getCode() !== 404 ? throw $e : false;
+    }
 }
 ```
 
 ---
 
-## Layout Issues
+## Layout & Rendering Issues
 
-### Components Not Rendering
-
-**Cause:** Empty or null components.
+### Components Not Appearing
 
 ```php
 // ❌ Empty body is ignored
 $article->addComponent(new Body(''));
 
-// ✅ Only add components with content
-if (!empty($text)) {
+// ✅ Only add non-empty content
+if (!empty(trim($text))) {
     $article->addComponent(new Body($text));
 }
 ```
 
-### Layout Shifts in Apple News
-
-**Cause:** Missing dimension hints for media.
+### Layout Shifts
 
 ```php
-// ❌ No dimensions = layout shift
+// ❌ No dimensions
 $photo = Photo::fromUrl('https://...');
 
-// ✅ Provide dimensions or min-height
-$photo = Photo::fromUrl('https://...');
+// ✅ Provide dimension hints
 $photo->setLayout(['minimumHeight' => '300pt']);
 ```
 
-### Content Cut Off
-
-**Cause:** Column span issues.
-
-```php
-// ✅ Ensure content spans available columns
-$article = Article::create('id', 'title', 'en', columns: 7);
-
-// Component should fit within 7 columns
-$component->setLayout([
-    'columnStart' => 0,
-    'columnSpan' => 7  // Max for 7-column layout
-]);
-```
-
----
-
-## Style Issues
-
 ### Styles Not Applied
-
-**Cause:** Style name mismatch or missing registration.
 
 ```php
 // ❌ Using unregistered style
 $body->setTextStyle('myStyle');
 
-// ✅ Register the style first
+// ✅ Register first
 $article->addComponentTextStyle('myStyle', $styleObject);
 $body->setTextStyle('myStyle');
 ```
 
 ### Dark Mode Not Working
 
-**Cause:** Missing conditional configuration.
-
 ```php
-// ❌ Only light mode defined
-$style->setTextColor('#000000');
+// ❌ Wrong format
+$style->setConditional(['darkMode' => true, 'textColor' => '#FFF']);
 
-// ✅ Include dark mode conditional
-$style
-    ->setTextColor('#000000')
-    ->setConditional([[
-        'conditions' => [['preferredColorScheme' => 'dark']],
-        'textColor' => '#FFFFFF'
-    ]]);
+// ✅ Correct format
+$style->setConditional([[
+    'conditions' => [['preferredColorScheme' => 'dark']],
+    'textColor' => '#FFFFFF'
+]]);
 ```
 
 ---
 
-## Network/HTTP Errors
+## Network & HTTP Errors
 
-### `cURL error: Connection timed out`
-
-**Solutions:**
-1. Check internet connectivity
-2. Verify firewall allows outbound HTTPS
-3. Increase timeout in HTTP client
+### `Connection timed out`
 
 ```php
 $httpClient = new Client([
@@ -276,103 +217,138 @@ $httpClient = new Client([
 ]);
 ```
 
-### `cURL error: SSL certificate problem`
+### `SSL certificate problem`
 
-**Solutions:**
-1. Update CA certificates: `sudo update-ca-certificates`
-2. Ensure PHP has valid CA bundle
-
-```php
-$httpClient = new Client([
-    'verify' => '/path/to/cacert.pem',  // If custom CA needed
-]);
+```bash
+sudo update-ca-certificates
 ```
 
 ---
 
-## Debugging Steps
+## Rate Limiting
 
-### 1. Export Article JSON
+### `429 Too Many Requests`
+
+```php
+function publishWithBackoff($client, $channelId, $article, $maxRetries = 5)
+{
+    for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+        try {
+            return $client->createArticle($channelId, $article);
+        } catch (AppleNewsException $e) {
+            if ($e->getCode() !== 429) throw $e;
+            sleep(pow(2, $attempt));  // 1s, 2s, 4s, 8s, 16s
+        }
+    }
+    throw new Exception("Max retries exceeded");
+}
+```
+
+---
+
+## Debugging Techniques
+
+### Export Article JSON
 
 ```php
 $json = json_encode($article, JSON_PRETTY_PRINT);
 file_put_contents('debug-article.json', $json);
 ```
 
-### 2. Validate with Apple's Tool
-
-Use [Apple News Format Validator](https://developer.apple.com/news-publisher/) to check JSON structure.
-
-### 3. Enable Detailed Logging
+### Validate Before Publishing
 
 ```php
-use GuzzleHttp\Middleware;
-use GuzzleHttp\MessageFormatter;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-
-$logger = new Logger('apple-news');
-$logger->pushHandler(new StreamHandler('apple-news.log'));
-
-$stack = HandlerStack::create();
-$stack->push(Middleware::log($logger, new MessageFormatter('{req_body}\n{res_body}')));
-
-$httpClient = new Client(['handler' => $stack]);
+function validateArticle(Article $article): array
+{
+    $errors = [];
+    $json = $article->jsonSerialize();
+    
+    if (empty($json['identifier'])) {
+        $errors[] = 'Missing identifier';
+    }
+    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $json['identifier'] ?? '')) {
+        $errors[] = 'Invalid identifier format';
+    }
+    if (empty($json['title'])) {
+        $errors[] = 'Missing title';
+    }
+    if (empty($json['components'])) {
+        $errors[] = 'No components';
+    }
+    
+    return $errors;
+}
 ```
 
-### 4. Check Error Details
+### Detailed Error Logging
 
 ```php
 try {
-    $client->createArticle($channelId, $article);
+    $response = $client->createArticle($channelId, $article);
 } catch (AppleNewsException $e) {
-    echo "Message: " . $e->getMessage() . "\n";
-    echo "Code: " . $e->getErrorCode() . "\n";
-    echo "KeyPath: " . $e->getKeyPath() . "\n";
-    
-    // Log the full response
-    print_r($e->getResponse());
+    $log = [
+        'message' => $e->getMessage(),
+        'code' => $e->getCode(),
+        'errorCode' => $e->getErrorCode(),
+        'keyPath' => $e->getKeyPath(),
+        'article' => json_encode($article, JSON_PRETTY_PRINT),
+    ];
+    file_put_contents('apple-news-error.log', print_r($log, true));
+    throw $e;
 }
 ```
 
 ---
 
-## Rate Limits
+## Environment Issues
 
-### `429 Too Many Requests`
+### PHP Version
 
-**Cause:** Exceeded API rate limits.
+**Requirement:** PHP 8.1+
 
-**Solutions:**
-1. Implement exponential backoff
-2. Batch operations where possible
-3. Cache channel/section data
+```bash
+php -v  # Should show 8.1.x or higher
+```
+
+### Required Extensions
 
 ```php
-// Simple retry with backoff
-function publishWithRetry($client, $channelId, $article, $maxRetries = 3) {
-    for ($i = 0; $i < $maxRetries; $i++) {
-        try {
-            return $client->createArticle($channelId, $article);
-        } catch (AppleNewsException $e) {
-            if ($e->getCode() === 429 && $i < $maxRetries - 1) {
-                sleep(pow(2, $i));  // 1s, 2s, 4s
-                continue;
-            }
-            throw $e;
-        }
+$required = ['json', 'curl', 'openssl', 'mbstring'];
+foreach ($required as $ext) {
+    if (!extension_loaded($ext)) {
+        echo "Missing: {$ext}\n";
     }
 }
 ```
+
+### Memory for Large Assets
+
+```php
+ini_set('memory_limit', '512M');
+```
+
+---
+
+## Error Code Reference
+
+| Code | Meaning | Solution |
+|------|---------|----------|
+| 401 | Unauthorized | Check API credentials |
+| 403 | Forbidden | Check channel permissions |
+| 404 | Not Found | Verify article/channel ID |
+| 409 | Conflict | Get fresh revision token |
+| 429 | Rate Limited | Implement backoff |
+| 500+ | Server Error | Retry with backoff |
 
 ---
 
 ## Getting Help
 
-1. Check the [README](../README.md) for basic usage
-2. Review the [Cookbook](COOKBOOK.md) for advanced patterns
-3. Consult [Apple's documentation](https://developer.apple.com/documentation/applenewsformat)
-4. Open an issue on [GitHub](https://github.com/tomgould/apple-news-api/issues)
+1. **[COOKBOOK.md](COOKBOOK.md)** - Advanced patterns
+2. **[CHEATSHEET.md](CHEATSHEET.md)** - Quick reference
+3. **[Apple Docs](https://developer.apple.com/documentation/apple_news)** - Official reference
+4. **[News Previewer](https://developer.apple.com/news-publisher/)** - Validate JSON
+5. **[GitHub Issues](https://github.com/tomgould/apple-news-api/issues)** - Report bugs
 
 ---
 
